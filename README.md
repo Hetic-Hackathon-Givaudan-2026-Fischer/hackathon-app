@@ -5,8 +5,8 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 ```
  navigateur ──► web (Vite, :5173) ──/api──► api (Express, :3000) ──► db (PostgreSQL, :5433)
                                                  │
-                                                 ├──► Ollama en direct            (mode 1, par défaut)
-                                                 └──► ia (FastAPI, :8000) ──► Ollama   (mode 2, équipe Data/IA)
+                                                 ├──► Ollama en direct               (mode 1, par défaut)
+                                                 └──► API de l'équipe Data/IA (ngrok)  (mode 2)
 ```
 
 | Dossier         | Rôle                                                                 |
@@ -14,7 +14,6 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 | `web/`          | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.  |
 | `api/`          | API Express 5 + TypeScript, rechargée à chaque modification.         |
 | `db/init/`      | Schéma et données de test, joués au **premier** démarrage de la base.|
-| `ia/`           | API FastAPI de l'équipe Data/IA, protégée par une clé d'API.         |
 | `.devcontainer/`| Image de dev partagée (Node 24 + `psql`), utilisée par VS Code / Zed.|
 
 ---
@@ -29,8 +28,6 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 
 **Optionnel**
 
-- **Python 3.10+** : seulement pour lancer le service `ia/`.
-- **ngrok** : seulement pour exposer le service `ia/` aux autres équipes.
 - **VS Code** (extension *Dev Containers*) ou **Zed** : pour coder directement dans le conteneur.
 
 Node n'est **pas** nécessaire sur ta machine : tout tourne dans les conteneurs.
@@ -71,7 +68,6 @@ Au premier lancement, le service `install` fait `npm ci` et crée `api/.env` à 
 | http://localhost:5173             | Le front                              |
 | http://localhost:3000/api/health  | Santé de l'API et version de la base  |
 | `localhost:5433` (user/mdp `app`) | PostgreSQL (TablePlus, DBeaver, psql…) |
-| http://localhost:8000/docs        | Swagger du service `ia/` (si lancé)   |
 
 > ⚠️ **Sous Linux**, vérifie d'abord qu'Ollama écoute sur `0.0.0.0` (voir section 1), sinon l'IA ne répondra pas.
 
@@ -87,7 +83,7 @@ Au premier lancement, le service `install` fait `npm ci` et crée `api/.env` à 
 L'API choisit son mode selon `api/.env` :
 
 - `DATA_AI_URL` **vide ou absente** → **mode 1** : l'API parle directement à Ollama.
-- `DATA_AI_URL` **renseignée** → **mode 2** : l'API passe par le service `ia/` de l'équipe Data/IA.
+- `DATA_AI_URL` **renseignée** → **mode 2** : l'API passe par l'API de l'équipe Data/IA.
 
 ### Mode 1 — Ollama en direct (par défaut)
 
@@ -97,60 +93,34 @@ Rien à configurer : `api/.env` pointe déjà sur `http://host.docker.internal:1
 
 L'appel est compatible OpenAI. Pour passer sur un fournisseur commercial (Mistral, OpenAI…), il suffit de changer `AI_BASE_URL`, `AI_MODEL` et `AI_API_KEY` dans `api/.env` (exemples commentés dans `api/.env.example`).
 
-### Mode 2 — Le service `ia/` (FastAPI)
+### Mode 2 — L'API de l'équipe Data/IA
 
-Le service `ia/` est protégé par **sa propre clé d'API** (en-tête `X-API-Key`). C'est cette clé qu'il faut générer et partager — pas une clé Ollama.
-
-**a) Générer la clé**
+L'équipe Data/IA héberge sa propre API (derrière un tunnel ngrok) et la protège avec une **clé d'API** (en-tête `X-API-Key`). C'est elle qui génère la clé, par exemple avec :
 
 ```bash
 openssl rand -hex 32
-# ou, sans openssl :
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-**b) Configurer et lancer le service**
+Elle te transmet l'URL et la clé **hors de git** (message privé, gestionnaire de mots de passe). Ajoute-les dans `api/.env` :
 
 ```bash
-cd ia
-cp .env.example .env          # puis colle la clé dans API_KEY=
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --env-file .env --host 0.0.0.0 --port 8000
-```
-
-Sans `API_KEY`, le service refuse de démarrer (c'est voulu). Le Swagger est sur http://localhost:8000/docs.
-
-Tester à la main :
-
-```bash
-curl -X POST http://localhost:8000/answer \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: <ta-clé>" \
-  -d '{"question": "Bonjour ?"}'
-```
-
-**c) Brancher l'API dessus** — ajoute dans `api/.env` :
-
-```bash
-# Service ia/ sur ta propre machine
-DATA_AI_URL=http://host.docker.internal:8000
-# ou, service d'une autre équipe derrière ngrok
-# DATA_AI_URL=https://xxxx.ngrok-free.app
-
-DATA_AI_KEY=<la-même-clé-que-API_KEY-dans-ia/.env>
+DATA_AI_URL=https://xxxx.ngrok-free.app
+DATA_AI_KEY=<la-clé-fournie-par-l-équipe-Data/IA>
 ```
 
 Puis `docker compose restart api`.
 
-**d) Exposer `ia/` aux autres équipes (ngrok)**
+Le contrat attendu (voir le Swagger de l'équipe, sur `<DATA_AI_URL>/docs`) :
 
 ```bash
-ngrok http 8000
+curl -X POST "$DATA_AI_URL/answer" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $DATA_AI_KEY" \
+  -d '{"question": "Bonjour ?"}'
+# → {"answer": "...", "model": "..."}
 ```
 
-Donne l'URL `https://…ngrok-free.app` et la clé aux tech-leads **hors de git** (message privé, gestionnaire de mots de passe). Si la machine se met en veille ou que le tunnel tombe, l'API abandonne au bout de 30 secondes.
+Si leur machine se met en veille ou que le tunnel tombe, l'API abandonne au bout de 30 secondes. Pour revenir au mode 1, vide `DATA_AI_URL` et redémarre l'API.
 
 ---
 
@@ -180,8 +150,8 @@ docker compose up -d
 | --------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `POST /api/questions` → `fetch failed` / `ECONNREFUSED`   | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : voir section 1).    |
 | `IA : 404 … model "llama3.2:1b" not found`                | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                               |
-| `IA Data : 401 Clé d'API invalide`                        | `DATA_AI_KEY` (api/.env) ≠ `API_KEY` (ia/.env).                                            |
-| `KeyError: 'API_KEY'` au lancement de `ia/`               | `ia/.env` absent, ou `--env-file .env` oublié.                                             |
+| `IA Data : 401 …`                                         | `DATA_AI_KEY` (api/.env) ne correspond pas à la clé de l'équipe Data/IA.                    |
+| `IA Data : … timeout` / `aborted`                         | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.          |
 | `port is already allocated`                               | Un autre programme utilise 3000, 5173 ou 5433 : arrête-le ou change le port dans `compose.yml`. |
 | Les modifications de `db/init/*.sql` ne sont pas prises   | Elles ne sont jouées qu'au premier démarrage : réinitialise la base (section 4).          |
 
