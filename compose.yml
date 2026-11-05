@@ -1,5 +1,3 @@
-# La stack de développement. Versions figées : les mêmes qu'en production.
-# `docker compose up --build` lance la base, l'API et le front d'un coup.
 name: hackathon
 
 # Base commune aux conteneurs Node : même image, même code monté, même utilisateur

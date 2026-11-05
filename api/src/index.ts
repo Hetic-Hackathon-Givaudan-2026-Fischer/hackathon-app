@@ -33,7 +33,7 @@ app.post('/api/questions', async (req, res) => {
     res.status(400).json({ error: 'Question manquante' });
     return;
   }
-  const answer = await ask(question);
+  const answer = DATA_AI_URL ? await askDataTeam(question) : await ask(question);
   const { rows } = await db.query(
     'INSERT INTO questions (question, answer) VALUES ($1, $2) RETURNING *',
     [question, answer],
@@ -61,5 +61,20 @@ async function ask(question: string): Promise<string> {
   return data.choices[0].message.content;
 }
 
+// L'API de l'équipe Data/IA, derrière son tunnel ngrok. Le contrat : son Swagger (/docs)
+async function askDataTeam(question: string): Promise<string> {
+  const response = await fetch(`${DATA_AI_URL}/answer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-API-Key': DATA_AI_KEY },
+    body: JSON.stringify({ question }),
+    // Machine en veille, tunnel coupé : on abandonne au bout de 30 secondes
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!response.ok) {
+    throw new Error(`IA Data : ${response.status} ${await response.text()}`);
+  }
+  const data = await response.json();
+  return data.answer;
+}
 // Sans adresse, Node écoute sur toutes les interfaces : joignable hors du conteneur
 app.listen(PORT, () => console.log(`API sur http://localhost:${PORT}`));
