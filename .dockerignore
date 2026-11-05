@@ -1,0 +1,43 @@
+# Contexte de build en liste blanche : tout est exclu, puis on réautorise
+# uniquement ce qu'une image peut avoir besoin de copier.
+# → contexte minimal (build rapide, cache stable) et aucun secret embarqué.
+#
+# Note : le Dockerfile et ce fichier sont toujours lus par Docker,
+# même exclus ; ils ne sont simplement jamais copiables via COPY/ADD.
+
+# 1. Tout exclure par défaut
+*
+
+# 2. Manifestes npm (workspaces + lockfile) : couche de dépendances cacheable
+!package.json
+!package-lock.json
+!api/package.json
+!web/package.json
+
+# 3. Sources et configuration de build
+!api/src/
+!api/tsconfig.json
+!web/src/
+!web/public/
+!web/index.html
+!web/vite.config.ts
+
+# 4. Ré-exclusions dans les dossiers réautorisés
+#    Dépendances et artefacts : réinstallés / reconstruits dans l'image
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.vite
+**/coverage
+#    Secrets : jamais dans une image
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+#    Tests et bruit d'éditeur / OS
+**/*.test.ts
+**/*.spec.ts
+**/__tests__
+**/*.log
+**/.DS_Store
+**/*.swp
