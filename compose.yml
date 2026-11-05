@@ -17,6 +17,25 @@ x-node: &node
     # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), pour Ollama
     - host.docker.internal:host-gateway
 
+# Rythme commun des healthchecks : sondes rapprochées pendant le démarrage
+# (start_interval), puis espacées une fois le service sain
+x-healthcheck-timing: &healthcheck-timing
+  interval: 10s
+  timeout: 3s
+  retries: 5
+  start_period: 30s
+  start_interval: 2s
+
+# Sonde HTTP pour les services Node : fetch natif de Node 24, sans curl/wget.
+# Chaque service fournit son URL via HEALTHCHECK_URL
+x-http-healthcheck: &http-healthcheck
+  <<: *healthcheck-timing
+  test:
+    - CMD
+    - node
+    - -e
+    - 'fetch(process.env.HEALTHCHECK_URL).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
+
 services:
   # À chaque démarrage : les dépendances (versions du lockfile) et le .env local
   install:
@@ -28,6 +47,10 @@ services:
     <<: *node
     working_dir: /workspace/api
     command: npm run dev
+    environment:
+      # /api/health interroge PostgreSQL : sain = API démarrée ET base joignable
+      HEALTHCHECK_URL: http://localhost:3000/api/health
+    healthcheck: *http-healthcheck
     ports:
       - 127.0.0.1:3000:3000
     depends_on:
@@ -43,13 +66,16 @@ services:
     command: npm run dev
     environment:
       API_URL: http://api:3000
+      HEALTHCHECK_URL: http://localhost:5173/
+    healthcheck: *http-healthcheck
     ports:
       - 127.0.0.1:5173:5173
     depends_on:
       install:
         condition: service_completed_successfully
+      # Le proxy /api n'a de sens qu'une fois l'API réellement prête
       api:
-        condition: service_started
+        condition: service_healthy
 
   # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils
   dev:
@@ -76,7 +102,9 @@ services:
       # Schéma et données de test, joués au premier démarrage
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U app -d app']
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      <<: *healthcheck-timing
+      # -h 127.0.0.1 : pendant l'init (scripts de db/init), PostgreSQL tourne
+      # sur un serveur temporaire sans TCP ; on ne passe sain qu'une fois le
+      # vrai serveur démarré, pas au milieu du seed
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U app -d app']
+      start_period: 60s
