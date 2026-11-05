@@ -9,12 +9,12 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
                                                  └──► API de l'équipe Data/IA (ngrok)  (mode 2)
 ```
 
-| Dossier         | Rôle                                                                 |
-| --------------- | -------------------------------------------------------------------- |
-| `web/`          | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.  |
-| `api/`          | API Express 5 + TypeScript, rechargée à chaque modification.         |
-| `db/init/`      | Schéma et données de test, joués au **premier** démarrage de la base.|
-| `.devcontainer/`| Image de dev partagée (Node 24 + `psql`), utilisée par VS Code / Zed.|
+| Dossier          | Rôle                                                                  |
+| ---------------- | --------------------------------------------------------------------- |
+| `web/`           | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.   |
+| `api/`           | API Express 5 + TypeScript, rechargée à chaque modification.          |
+| `db/init/`       | Schéma et données de test, joués au **premier** démarrage de la base. |
+| `.devcontainer/` | Image de dev partagée (Node 24 + `psql`), utilisée par VS Code / Zed. |
 
 ---
 
@@ -28,7 +28,7 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 
 **Optionnel**
 
-- **VS Code** (extension *Dev Containers*) ou **Zed** : pour coder directement dans le conteneur.
+- **VS Code** (extension _Dev Containers_) ou **Zed** : pour coder directement dans le conteneur.
 
 Node n'est **pas** nécessaire sur ta machine : tout tourne dans les conteneurs.
 
@@ -63,17 +63,17 @@ xdg-open http://localhost:5173   # ou ouvre l'URL dans ton navigateur
 
 Au premier lancement, le service `install` fait `npm ci` et crée `api/.env` à partir de `api/.env.example`. Ça prend une minute.
 
-| URL                               | Quoi                                  |
-| --------------------------------- | ------------------------------------- |
-| http://localhost:5173             | Le front                              |
-| http://localhost:3000/api/health  | Santé de l'API et version de la base  |
+| URL                               | Quoi                                   |
+| --------------------------------- | -------------------------------------- |
+| http://localhost:5173             | Le front                               |
+| http://localhost:3000/api/health  | Santé de l'API et version de la base   |
 | `localhost:5433` (user/mdp `app`) | PostgreSQL (TablePlus, DBeaver, psql…) |
 
 > ⚠️ **Sous Linux**, vérifie d'abord qu'Ollama écoute sur `0.0.0.0` (voir section 1), sinon l'IA ne répondra pas.
 
 ### Coder dans le conteneur (optionnel)
 
-- **VS Code** : *Dev Containers: Reopen in Container*. VS Code démarre la stack et s'attache au service `dev`.
+- **VS Code** : _Dev Containers: Reopen in Container_. VS Code démarre la stack et s'attache au service `dev`.
 - **Zed** ou terminal : `docker compose exec dev bash`.
 
 ---
@@ -142,18 +142,36 @@ rm -rf db/data
 docker compose up -d
 ```
 
+### Qualité du code : ESLint, Prettier et hook pre-commit
+
+- **ESLint** détecte les erreurs probables (variable inutilisée, promesse oubliée, `any` explicite…).
+- **Prettier** s'occupe de la forme (guillemets, indentation, retours à la ligne).
+- Le dev container les branche dans VS Code et Zed : formatage à l'enregistrement, corrections ESLint à la demande.
+
+Dans le conteneur (`docker compose exec dev bash`), à la racine :
+
+```bash
+npm run lint           # ESLint sur tout le projet
+npm run format         # Prettier réécrit les fichiers
+npm run format:check   # Prettier vérifie sans modifier (CI)
+```
+
+À chaque commit, **husky** lance **lint-staged**, qui passe ESLint (`--fix`) et Prettier uniquement sur les fichiers indexés. Le hook s'active au `npm ci` / `npm install` (script `prepare`).
+
+`db/data` (dossier de PostgreSQL) et `.venv` (paquets Python de l'équipe Data/IA) sont exclus. Une règle ESLint qui ne convient pas à l'équipe se désactive dans `eslint.config.mjs`, avec un commentaire qui la justifie.
+
 ---
 
 ## 5. Dépannage
 
-| Symptôme                                                  | Cause probable / solution                                                                 |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `POST /api/questions` → `fetch failed` / `ECONNREFUSED`   | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : voir section 1).    |
-| `IA : 404 … model "llama3.2:1b" not found`                | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                               |
-| `IA Data : 401 …`                                         | `DATA_AI_KEY` (api/.env) ne correspond pas à la clé de l'équipe Data/IA.                    |
-| `IA Data : … timeout` / `aborted`                         | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.          |
-| `port is already allocated`                               | Un autre programme utilise 3000, 5173 ou 5433 : arrête-le ou change le port dans `compose.yml`. |
-| Les modifications de `db/init/*.sql` ne sont pas prises   | Elles ne sont jouées qu'au premier démarrage : réinitialise la base (section 4).          |
+| Symptôme                                                | Cause probable / solution                                                                       |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `POST /api/questions` → `fetch failed` / `ECONNREFUSED` | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : voir section 1).                 |
+| `IA : 404 … model "llama3.2:1b" not found`              | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                                     |
+| `IA Data : 401 …`                                       | `DATA_AI_KEY` (api/.env) ne correspond pas à la clé de l'équipe Data/IA.                        |
+| `IA Data : … timeout` / `aborted`                       | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.              |
+| `port is already allocated`                             | Un autre programme utilise 3000, 5173 ou 5433 : arrête-le ou change le port dans `compose.yml`. |
+| Les modifications de `db/init/*.sql` ne sont pas prises | Elles ne sont jouées qu'au premier démarrage : réinitialise la base (section 4).                |
 
 ---
 
