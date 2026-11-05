@@ -1,0 +1,84 @@
+# La stack de développement. Versions figées : les mêmes qu'en production.
+# `docker compose up --build` lance la base, l'API et le front d'un coup.
+name: hackathon
+
+# Base commune aux conteneurs Node : même image, même code monté, même utilisateur
+x-node: &node
+  build:
+    context: .
+    dockerfile: .devcontainer/Dockerfile
+  image: hackathon-dev
+  # Même uid que sur l'hôte (1000) : les fichiers créés restent les tiens
+  user: node
+  # Relaie Ctrl+C / docker stop jusqu'à npm, tsx et vite
+  init: true
+  working_dir: /workspace
+  volumes:
+    - .:/workspace:cached
+  extra_hosts:
+    # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), pour Ollama
+    - host.docker.internal:host-gateway
+
+services:
+  # À chaque démarrage : les dépendances (versions du lockfile) et le .env local
+  install:
+    <<: *node
+    command: sh -c "npm ci --no-audit --no-fund && (test -f api/.env || cp api/.env.example api/.env)"
+
+  # L'API Express, rechargée à chaque modification (tsx watch)
+  api:
+    <<: *node
+    working_dir: /workspace/api
+    command: npm run dev
+    ports:
+      - 127.0.0.1:3000:3000
+    depends_on:
+      install:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+  # Le front Vite ; les appels /api sont relayés au service « api »
+  web:
+    <<: *node
+    working_dir: /workspace/web
+    command: npm run dev
+    environment:
+      API_URL: http://api:3000
+    ports:
+      - 127.0.0.1:5173:5173
+    depends_on:
+      install:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+
+  # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils
+  dev:
+    <<: *node
+    command: sleep infinity
+    depends_on:
+      install:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      # 5433 côté hôte : un PostgreSQL local occupe déjà le 5432 (TablePlus, psql…)
+      - 127.0.0.1:5433:5432
+    volumes:
+      # Les données, dans un dossier du projet (ignoré par git)
+      - ./db/data:/var/lib/postgresql/data
+      # Schéma et données de test, joués au premier démarrage
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U app -d app']
+      interval: 5s
+      timeout: 3s
+      retries: 10

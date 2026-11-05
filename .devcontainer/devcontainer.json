@@ -1,0 +1,30 @@
+{
+  "name": "Hackathon",
+  // VS Code démarre toute la stack, puis s'attache au service « dev »
+  "dockerComposeFile": ["../compose.yml"],
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "remoteUser": "node",
+
+
+  // Les mêmes extensions et réglages pour toute l'équipe
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+      }
+    },
+    // Zed : les réglages vivent dans .zed/settings.json
+    "zed": {
+      "extensions": ["dockerfile", "docker-compose", "sql"]
+    }
+  },
+
+  // L'API (3000), le front (5173) et PostgreSQL (5433) sont publiés par compose.yml
+
+  // Une fois, à la création. Dépendances et .env : service « install » de compose.yml
+  "postCreateCommand": "git config --global --add safe.directory /workspace"
+}

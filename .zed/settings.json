@@ -1,0 +1,14 @@
+// Réglages Zed du projet : l'équivalent des settings VS Code du devcontainer
+{
+  "format_on_save": "on",
+  "languages": {
+    "JavaScript": {
+      "formatter": "prettier",
+      "code_actions_on_format": { "source.fixAll.eslint": true }
+    },
+    "TypeScript": {
+      "formatter": "prettier",
+      "code_actions_on_format": { "source.fixAll.eslint": true }
+    }
+  }
+}
