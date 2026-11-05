@@ -8,7 +8,14 @@ try {
   // Pas de .env : on garde l'environnement tel quel
 }
 
-const { DATABASE_URL, AI_BASE_URL, AI_MODEL, AI_API_KEY = '' } = process.env;
+const {
+  DATABASE_URL,
+  AI_BASE_URL,
+  AI_MODEL,
+  AI_API_KEY = '',
+  DATA_AI_URL,
+  DATA_AI_KEY = '',
+} = process.env;
 const PORT = Number(process.env.PORT ?? 3000);
 
 const db = new pg.Pool({ connectionString: DATABASE_URL });
