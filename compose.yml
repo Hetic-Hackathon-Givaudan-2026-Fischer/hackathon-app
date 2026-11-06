@@ -1,11 +1,9 @@
 name: hackathon
 
-# Base commune aux conteneurs Node : même image, même code monté, même utilisateur
+# Base commune aux conteneurs Node : même code monté, même utilisateur.
+# Image officielle slim : Node suffit pour install, api et web (rien à compiler)
 x-node: &node
-  build:
-    context: .
-    dockerfile: .devcontainer/Dockerfile
-  image: hackathon-dev
+  image: node:24-trixie-slim
   # Même uid que sur l'hôte (1000) : les fichiers créés restent les tiens
   user: node
   # Relaie Ctrl+C / docker stop jusqu'à npm, tsx et vite
@@ -37,10 +35,25 @@ x-http-healthcheck: &http-healthcheck
     - 'fetch(process.env.HEALTHCHECK_URL).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
 
 services:
-  # À chaque démarrage : les dépendances (versions du lockfile) et le .env local
+  # À chaque démarrage : les dépendances (versions du lockfile) et le .env local.
+  # npm ci vide node_modules : relancé sous api et web en marche (dev container
+  # ouvert après setup.sh), il fait planter tsx. On ne le joue donc que si
+  # package-lock.json a changé depuis la dernière installation
   install:
     <<: *node
-    command: sh -c "npm ci --no-audit --no-fund && (test -f api/.env || cp api/.env.example api/.env)"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        stamp=node_modules/.package-lock.sha256
+        if sha256sum -c "$$stamp" >/dev/null 2>&1; then
+          echo "Dépendances à jour"
+        else
+          npm ci --no-audit --no-fund
+          sha256sum package-lock.json > "$$stamp"
+        fi
+        test -f api/.env || cp api/.env.example api/.env
 
   # L'API Express, rechargée à chaque modification (tsx watch)
   api:
@@ -77,9 +90,14 @@ services:
       api:
         condition: service_healthy
 
-  # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils
+  # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils.
+  # Seul conteneur construit : la même base, plus git et psql
   dev:
     <<: *node
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    image: hackathon-dev
     command: sleep infinity
     depends_on:
       install:

@@ -1,30 +1,45 @@
 {
   "name": "Hackathon",
-  // VS Code démarre toute la stack, puis s'attache au service « dev »
+  // L'éditeur (VS Code ou Zed) démarre toute la stack, puis s'attache au service « dev »
   "dockerComposeFile": ["../compose.yml"],
   "service": "dev",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
 
+  // Outils en plus de l'image : ici, la CLI GitHub (gh)
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
   // Les mêmes extensions et réglages pour toute l'équipe
   "customizations": {
     "vscode": {
-      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "github.vscode-pull-request-github"
+      ],
       "settings": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
       }
     },
-    // Zed : les réglages vivent dans .zed/settings.json
+    // Zed ne lit ici que les extensions : ses réglages sont dans .zed/settings.json
+    // (ESLint et Prettier sont intégrés à Zed, pas besoin d'extension)
     "zed": {
-      "extensions": ["dockerfile", "docker-compose", "sql"]
+      "extensions": ["dockerfile", "docker-compose"]
     }
   },
 
-  // L'API (3000), le front (5173) et PostgreSQL (5433) sont publiés par compose.yml
+  // Pas de forwardPorts : compose.yml publie déjà l'API (3000), le front (5173)
+  // et PostgreSQL (5433) sur 127.0.0.1, pareil pour VS Code, Zed et le terminal.
+  // En ajouter ici ferait publier par Zed les mêmes ports sur 0.0.0.0 (conflit
+  // « port is already allocated », et exposition sur le Wi-Fi de l'école).
 
   // Une fois, à la création. Dépendances et .env : service « install » de compose.yml
-  "postCreateCommand": "git config --global --add safe.directory /workspace"
+  // Forme tableau obligatoire pour Zed : il casse la forme chaîne (il la relance
+  // dans un second `sh -c` sans guillemets). D'où le script.
+  "postCreateCommand": ["sh", "/workspace/.devcontainer/post-create.sh"]
 }
