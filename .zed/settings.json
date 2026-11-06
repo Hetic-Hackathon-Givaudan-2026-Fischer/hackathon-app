@@ -1,14 +1,20 @@
-// Réglages Zed du projet : l'équivalent des settings VS Code du devcontainer
+// Réglages Zed du projet : l'équivalent de customizations.vscode.settings
+// dans .devcontainer/devcontainer.json (Zed n'y lit que les extensions).
 {
+  // "editor.formatOnSave": true
   "format_on_save": "on",
+
+  // "editor.defaultFormatter": Prettier. En mode "auto", Zed formate avec Prettier
+  "formatter": "auto",
+
+  // "source.fixAll.eslint" : ESLint corrige puis Prettier formate
   "languages": {
     "JavaScript": {
-      "formatter": "prettier",
       "code_actions_on_format": { "source.fixAll.eslint": true }
     },
     "TypeScript": {
-      "formatter": "prettier",
       "code_actions_on_format": { "source.fixAll.eslint": true }
-    }
+    },
+    "TSX": { "code_actions_on_format": { "source.fixAll.eslint": true } }
   }
 }

@@ -1,11 +1,9 @@
 name: hackathon
 
-# Base commune aux conteneurs Node : même image, même code monté, même utilisateur
+# Base commune aux conteneurs Node : même code monté, même utilisateur.
+# Image officielle slim : Node suffit pour install, api et web (rien à compiler)
 x-node: &node
-  build:
-    context: .
-    dockerfile: .devcontainer/Dockerfile
-  image: hackathon-dev
+  image: node:24-trixie-slim
   # Même uid que sur l'hôte (1000) : les fichiers créés restent les tiens
   user: node
   # Relaie Ctrl+C / docker stop jusqu'à npm, tsx et vite
@@ -77,9 +75,14 @@ services:
       api:
         condition: service_healthy
 
-  # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils
+  # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils.
+  # Seul conteneur construit : la même base, plus git et psql
   dev:
     <<: *node
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    image: hackathon-dev
     command: sleep infinity
     depends_on:
       install:
