@@ -1,27 +1,37 @@
 # 0001. Appeler l'IA par le contrat compatible OpenAI
 
 - Statut : acceptée
-- Date : 2026-11-08
+- Date : 2026-11-08 (mise à jour le 2026-11-10 : API en Python, voir [0004](0004-backend-fastapi.md))
 - Décideurs : Arnaud Fischer
 
 ## Contexte
 
-Le produit envoie des questions à un modèle de langage et stocke ses réponses. En développement, chacun utilise Ollama sur sa machine (`llama3.2:1b`) : gratuit, sans clé. Pour la démo, ou si un modèle local ne suffit pas, l'équipe pourra passer sur un fournisseur commercial (Mistral, OpenAI…). Le hackathon dure deux semaines : changer de fournisseur ne doit pas obliger à reprendre le code.
+En dev, Ollama local (`llama3.2:1b`, gratuit, sans clé) ; pour la démo, peut-être un fournisseur commercial (Mistral, OpenAI…). Changer de fournisseur ne doit pas toucher au code.
 
 ## Options
 
-1. SDK d'un fournisseur (`openai`, `@mistralai/mistralai`, `ollama`) : typé, prêt à l'emploi. Lie le code à ce fournisseur : en changer, c'est réécrire les appels.
-2. Couche d'abstraction (LangChain, Vercel AI SDK) : beaucoup de fournisseurs. Beaucoup de dépendances et de concepts à apprendre pour un seul appel.
-3. `fetch` sur l'endpoint `/chat/completions` compatible OpenAI : exposé par Ollama, Mistral, OpenAI et la plupart des autres. Pas de types ni de streaming tout prêts.
+1. SDK d'un fournisseur (`openai`, `mistralai`, `ollama`) : lie le code au fournisseur.
+2. Abstraction (LangChain, LiteLLM) : lourd pour un seul appel.
+3. `httpx` sur `/chat/completions` compatible OpenAI : exposé par Ollama, Mistral, OpenAI… ; ni types ni streaming fournis.
 
 ## Décision
 
-Nous choisissons l'option 3 : une seule fonction `ask()`, dans `api/src/index.ts`, appelle `${AI_BASE_URL}/chat/completions` avec `fetch`. Le fournisseur se choisit dans `api/.env` avec trois variables (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`), parce que c'est la seule option où changer de fournisseur ne touche pas au code. Tout nouvel appel à l'IA passe par cette fonction.
+Option 3, dans [`api/app/clients/ai.py`](../../api/app/clients/ai.py) :
 
-Le mode 2 (API de l'équipe Data/IA, fonction `askDataTeam()`) suit le contrat de cette équipe et n'est pas concerné.
+| Mode | Classe                     | Activé quand             | Appel                                   |
+| ---- | -------------------------- | ------------------------ | --------------------------------------- |
+| 1    | `OpenAICompatibleProvider` | `DATA_AI_URL` vide       | `POST {AI_BASE_URL}/chat/completions`   |
+| 2    | `DataTeamProvider`         | `DATA_AI_URL` renseignée | contrat de l'équipe Data/IA (`/answer`) |
+
+Règles :
+
+- Tout appel à l'IA passe par l'interface `AnswerProvider` de [`services/ports.py`](../../api/app/services/ports.py). Jamais de SDK de fournisseur.
+- Le fournisseur se change dans `api/.env` (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`, exemples dans [`api/.env.example`](../../api/.env.example)), jamais dans le code.
+- Seul `get_answer_provider` de [`api/deps.py`](../../api/app/api/deps.py) choisit le mode.
+- Toute erreur ou réponse inattendue du fournisseur devient une `AIProviderError` (HTTP `502`, détail dans les logs uniquement).
 
 ## Conséquences
 
-- Positives : passer d'Ollama à Mistral, c'est modifier `api/.env` puis `docker compose restart api` ; aucune dépendance à maintenir ; les exemples sont commentés dans `api/.env.example`.
-- Négatives, à accepter : la réponse n'est pas typée (`data.choices[0].message.content`) ; pas de streaming ; les fonctions propres à un fournisseur, hors du contrat commun, ne sont pas accessibles.
-- À revoir si : nous avons besoin du streaming ou des appels d'outils, ou si le fournisseur retenu n'expose pas d'endpoint compatible OpenAI.
+- Positives : changer de fournisseur = modifier `api/.env` + `docker compose restart api` ; aucun SDK à maintenir ; IA simulable avec `httpx.MockTransport` ([0003](0003-tests.md)).
+- Négatives : réponse non typée (`choices[0].message.content` lu à la main) ; pas de streaming ; fonctions propres à un fournisseur inaccessibles.
+- À revoir si : besoin de streaming ou d'appels d'outils ; fournisseur sans endpoint compatible OpenAI.

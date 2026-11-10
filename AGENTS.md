@@ -17,13 +17,11 @@ La documentation, les ADR et les commentaires sont en **français** : garde cett
 
 ## Décisions
 
-- Lis `docs/adr/` avant d'ajouter une dépendance ou de changer de composant
-- Ne contredis pas un ADR au statut « acceptée »
-- S'il faut en changer, propose un nouvel ADR, puis arrête-toi
+Le cadre des agents (priorités, quel ADR lire, écarts avec les skills) est dans [ADR 0006](docs/adr/0006-cadre-agents-ia.md). L'essentiel :
 
-Un nouvel ADR part de [`docs/adr/0000-modele.md`](docs/adr/0000-modele.md), au statut « proposée », numéroté à la suite.
-
-Un ADR « acceptée » l'emporte sur les conseils génériques d'un skill (par exemple `.agents/skills/fastapi`, qui recommande SQLModel alors que [0004](docs/adr/0004-backend-fastapi.md) a retenu SQLAlchemy).
+- Priorité : ADR « acceptée » > ce fichier > skill > tes habitudes.
+- Lis l'ADR concerné avant d'ajouter une dépendance ou de changer de composant.
+- Ne contredis pas un ADR « acceptée ». Pour en changer : nouvel ADR « proposée » depuis [`0000-modele.md`](docs/adr/0000-modele.md), puis arrête-toi.
 
 ## Règles de dev
 

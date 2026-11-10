@@ -1,38 +1,40 @@
-# 0003. Tester l'API avec Vitest et lancer les tests en CI
+# 0003. Tester l'API avec pytest et lancer les tests en CI
 
-- Statut : proposée
-- Date : 2026-11-08
+- Statut : acceptée
+- Date : 2026-11-10 (révise la version du 2026-11-08, qui retenait Vitest pour l'API Express)
 - Décideurs : Arnaud Fischer
 
 ## Contexte
 
-Le projet n'a aucun test. La CI (`.github/workflows/ci.yml`) vérifie le lint, le format et la compilation, pas le comportement. Le modèle de pull request demande pourtant « Tests unitaires / intégration passés ». Pendant deux semaines, plusieurs personnes modifient l'API en même temps : une régression (route cassée, requête SQL fausse) ne doit pas arriver sur `develop`. L'API dépend de PostgreSQL et d'une IA (Ollama ou API Data/IA) qui n'est pas disponible en CI.
-
-La stack actuelle (Node, Express, TypeScript) n'est pas encore définitive : l'équipe doit d'abord valider l'idée du projet, puis faire ses choix technologiques. Ce choix d'outil de test dépend donc de la stack retenue.
+Plusieurs personnes modifient l'API en parallèle : une régression ne doit pas atteindre `develop`. L'IA n'est pas disponible en CI.
 
 ## Options
 
-1. Vitest : TypeScript et ESM sans configuration, même écosystème que Vite côté front. Une dépendance de plus.
-2. Jest : le plus connu. TypeScript et ESM demandent de la configuration (`ts-jest`, options expérimentales de Node).
-3. `node:test` : intégré à Node 24, aucune dépendance. Simulations et mode watch moins confortables.
-4. Pas de tests automatisés, seulement de la relecture et des essais à la main : rien à mettre en place. Aucune protection contre les régressions.
+1. pytest + pytest-asyncio : standard Python, fixtures, tests `async`.
+2. `unittest` : sans dépendance, plus verbeux.
+3. Pas de tests : aucune protection.
 
 ## Décision
 
-Nous proposons l'option 1, sur trois niveaux, par ordre de priorité :
+Option 1 (groupe `dev` de [`api/pyproject.toml`](../../api/pyproject.toml), `asyncio_mode = "auto"`), dans [`api/tests/`](../../api/tests/) :
 
-1. Tests unitaires du backend : la logique sans base ni réseau (validation de la question, lecture de la réponse de l'IA), avec l'IA simulée.
-2. Tests d'intégration du backend : les routes appelées avec Supertest, sur une vraie base PostgreSQL 17 dédiée aux tests (même image que `compose.yml`, schéma de `db/init/`), avec l'IA toujours simulée.
-3. Tests end-to-end, si le temps le permet : Playwright sur le parcours « poser une question, voir la réponse ».
+| Dossier                                        | Teste                              | Base et IA                                                                                                                     |
+| ---------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| [`unit/`](../../api/tests/unit/)               | services, clients IA, deps, config | faux de [`fakes.py`](../../api/tests/fakes.py) ; HTTP simulé par `httpx.MockTransport`                                         |
+| [`api/`](../../api/tests/api/)                 | routes, codes HTTP                 | vrais services ; adaptateurs remplacés par `app.dependency_overrides` ([`conftest.py`](../../api/tests/api/conftest.py))       |
+| [`integration/`](../../api/tests/integration/) | repositories SQL                   | PostgreSQL 17 via `TEST_DATABASE_URL`, transaction annulée par test ([`conftest.py`](../../api/tests/integration/conftest.py)) |
 
-Un job `tests` est ajouté à la CI et tourne sur chaque pull request, avec un service PostgreSQL. Une pull request dont les tests échouent ne peut pas être fusionnée.
+Règles :
+
+- Toute nouvelle logique de service s'accompagne de ses tests.
+- L'IA est toujours simulée. Jamais d'appel réel.
+- Un nouveau `Protocol` dans [`services/ports.py`](../../api/app/services/ports.py) a son faux dans `fakes.py`.
+- Les tests d'intégration jouent [`db/init/001-schema.sql`](../../db/init/001-schema.sql) ; sans `TEST_DATABASE_URL`, ils sont sautés.
+- CI : job `api` de [`.github/workflows/tests.yml`](../../.github/workflows/tests.yml) (service `postgres:17`, `uv run pytest`) sur chaque PR et push sur `main` / `develop`.
+- End-to-end (Playwright, « poser une question, voir la réponse ») : seulement si le temps le permet, pas encore en place.
 
 ## Conséquences
 
-- Positives : une régression de l'API est détectée dans la pull request, avant `develop` ; la case « tests passés » du modèle de PR devient vérifiable.
-- Négatives, à accepter :
-  - `api/src/index.ts` doit être découpé : exporter `app` sans `app.listen()`, et sortir les appels à l'IA dans un module pour pouvoir les simuler (ce qui sert aussi [0001](0001-client-ia.md)) ;
-  - un nouveau job dans `.github/workflows/ci.yml` (service PostgreSQL, `npm test`), donc une CI plus longue ;
-  - une règle de protection sur `develop` pour que ce job bloque la fusion ;
-  - du temps de hackathon pris sur les fonctionnalités.
-- À revoir si : l'équipe change de technologie après avoir validé l'idée, par exemple un backend en Python avec Flask ou FastAPI (Vitest et Supertest seraient alors remplacés, par exemple par pytest ; les trois niveaux de tests, la base PostgreSQL dédiée, l'IA simulée et le job de CI restent valables) ; les tests end-to-end sont trop lents ou instables en CI (les lancer seulement avant la démo) ; le temps manque (garder au minimum les tests d'intégration des routes).
+- Positives : régression bloquée dans la PR ; `uv run pytest` marche sans Docker ; rien ne reste en base.
+- Négatives : faux à maintenir ; CI plus longue (service PostgreSQL) ; protection de branche sur `develop` nécessaire pour bloquer la fusion.
+- À revoir si : passage à Alembic (les tests d'intégration jouent les migrations) ; end-to-end trop lents en CI ; temps manquant (garder au minimum les tests d'API).
