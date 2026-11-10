@@ -8,15 +8,18 @@
 # 1. Tout exclure par défaut
 *
 
-# 2. Manifestes npm (workspaces + lockfile) : couche de dépendances cacheable
+# 2. Manifestes et lockfiles : couches de dépendances cacheables
+#    npm (workspace du front)
 !package.json
 !package-lock.json
-!api/package.json
 !web/package.json
+#    uv (API Python)
+!api/pyproject.toml
+!api/uv.lock
+!api/.python-version
 
 # 3. Sources et configuration de build
-!api/src/
-!api/tsconfig.json
+!api/app/
 !web/src/
 !web/public/
 !web/index.html
@@ -29,6 +32,12 @@
 **/*.tsbuildinfo
 **/.vite
 **/coverage
+#    Environnement et caches Python : recréés dans l'image (uv sync)
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
 #    Secrets : jamais dans une image
 **/.env
 **/.env.*
@@ -38,6 +47,8 @@
 **/*.test.ts
 **/*.spec.ts
 **/__tests__
+**/tests
+**/test_*.py
 **/*.log
 **/.DS_Store
 **/*.swp

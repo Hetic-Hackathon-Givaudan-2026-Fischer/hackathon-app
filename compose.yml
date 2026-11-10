@@ -1,12 +1,8 @@
 name: hackathon
 
-# Base commune aux conteneurs Node : même code monté, même utilisateur.
-# Image officielle slim : Node suffit pour install, api et web (rien à compiler)
-x-node: &node
-  image: node:24-trixie-slim
-  # Même uid que sur l'hôte (1000) : les fichiers créés restent les tiens
-  user: node
-  # Relaie Ctrl+C / docker stop jusqu'à npm, tsx et vite
+# Base commune à tous les conteneurs de code (Node et Python) : même projet monté.
+# init relaie Ctrl+C / docker stop jusqu'à npm, vite et uvicorn
+x-workspace: &workspace
   init: true
   working_dir: /workspace
   volumes:
@@ -14,6 +10,13 @@ x-node: &node
   extra_hosts:
     # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), pour Ollama
     - host.docker.internal:host-gateway
+
+# Conteneurs Node (install, web, dev). Image officielle slim : rien à compiler
+x-node: &node
+  <<: *workspace
+  image: node:24-trixie-slim
+  # Même uid que sur l'hôte (1000) : les fichiers créés restent les tiens
+  user: node
 
 # Rythme commun des healthchecks : sondes rapprochées pendant le démarrage
 # (start_interval), puis espacées une fois le service sain
@@ -34,10 +37,21 @@ x-http-healthcheck: &http-healthcheck
     - -e
     - 'fetch(process.env.HEALTHCHECK_URL).then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
 
+# API Python : urllib de la bibliothèque standard, sans curl/wget
+# urlopen lève une exception (code de sortie 1) si la réponse n'est pas 2xx
+x-python-healthcheck: &python-healthcheck
+  <<: *healthcheck-timing
+  test:
+    - CMD
+    - python
+    - -c
+    - 'import os, urllib.request; urllib.request.urlopen(os.environ["HEALTHCHECK_URL"], timeout=2)'
+
 services:
-  # À chaque démarrage : les dépendances (versions du lockfile) et le .env local.
-  # npm ci vide node_modules : relancé sous api et web en marche (dev container
-  # ouvert après setup.sh), il fait planter tsx. On ne le joue donc que si
+  # À chaque démarrage : les dépendances du front (versions du lockfile) et le
+  # .env de l'API. Celles de l'API (Python) sont dans son image, voir « api ».
+  # npm ci vide node_modules : relancé sous web en marche (dev container ouvert
+  # après setup.sh), il fait planter vite. On ne le joue donc que si
   # package-lock.json a changé depuis la dernière installation
   install:
     <<: *node
@@ -55,18 +69,28 @@ services:
         fi
         test -f api/.env || cp api/.env.example api/.env
 
-  # L'API Express, rechargée à chaque modification (tsx watch)
+  # L'API FastAPI, rechargée à chaque modification (uvicorn --reload).
+  # Image construite : Python 3.13, uv et les dépendances dans /opt/venv, hors du
+  # montage (pas de conflit avec api/.venv du dev container). Utilisateur uid 1000
   api:
-    <<: *node
+    <<: *workspace
+    build:
+      # Racine du projet : le .dockerignore en liste blanche s'applique
+      context: .
+      dockerfile: api/Dockerfile
+      target: dev
+    image: hackathon-api
     working_dir: /workspace/api
-    command: npm run dev
+    # Pas de command : celle de la cible dev de api/Dockerfile (uvicorn --reload),
+    # une seule source. uv resynchronise /opt/venv si uv.lock a changé
     environment:
-      # /api/health interroge PostgreSQL : sain = API démarrée ET base joignable
-      HEALTHCHECK_URL: http://localhost:3000/api/health
-    healthcheck: *http-healthcheck
+      # /api/v1/health interroge PostgreSQL : sain = API démarrée ET base joignable
+      HEALTHCHECK_URL: http://localhost:3000/api/v1/health
+    healthcheck: *python-healthcheck
     ports:
       - 127.0.0.1:3000:3000
     depends_on:
+      # Pour api/.env, créé par install à partir de api/.env.example
       install:
         condition: service_completed_successfully
       db:
@@ -91,7 +115,7 @@ services:
         condition: service_healthy
 
   # Le poste de travail : VS Code / Zed s'y attachent pour le terminal et les outils.
-  # Seul conteneur construit : la même base, plus git et psql
+  # La même base Node, plus git, psql, Python 3.13 et uv
   dev:
     <<: *node
     build:

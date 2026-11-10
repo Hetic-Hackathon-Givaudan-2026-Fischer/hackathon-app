@@ -15,6 +15,14 @@
     "TypeScript": {
       "code_actions_on_format": { "source.fixAll.eslint": true }
     },
-    "TSX": { "code_actions_on_format": { "source.fixAll.eslint": true } }
+    "TSX": { "code_actions_on_format": { "source.fixAll.eslint": true } },
+    // Python : Ruff (intégré à Zed) formate, corrige et trie les imports,
+    // comme le bloc "[python]" de devcontainer.json pour VS Code
+    "Python": {
+      "code_actions_on_format": {
+        "source.fixAll.ruff": true,
+        "source.organizeImports.ruff": true
+      }
+    }
   }
 }
