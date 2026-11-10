@@ -5,10 +5,10 @@ const form = document.querySelector('form')!;
 const list = document.querySelector('#questions')!;
 
 async function refresh() {
-  const status = await fetch('/api/health').then((r) => r.json());
+  const status = await fetch('/api/v1/health').then((r) => r.json());
   health.textContent = `API OK · ${status.db}`;
 
-  const questions: Question[] = await fetch('/api/questions').then((r) =>
+  const questions: Question[] = await fetch('/api/v1/questions').then((r) =>
     r.json(),
   );
   list.replaceChildren(
@@ -23,7 +23,7 @@ async function refresh() {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const question = new FormData(form).get('question');
-  await fetch('/api/questions', {
+  await fetch('/api/v1/questions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question }),
