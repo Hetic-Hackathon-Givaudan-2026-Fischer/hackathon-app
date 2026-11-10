@@ -22,7 +22,7 @@ jobs:
   api:
     runs-on: ubuntu-latest
     # Même Python (3.13), même uv et même Debian que api/Dockerfile et le dev container
-    container: ghcr.io/astral-sh/uv:0.11.11-python3.13-trixie-slim
+    container: ghcr.io/astral-sh/uv:0.13.7-python3.13-trixie-slim
     defaults:
       run:
         working-directory: api

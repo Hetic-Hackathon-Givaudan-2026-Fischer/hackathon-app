@@ -29,7 +29,9 @@ jobs:
       - uses: trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb # v3.99.8
         with:
           version: 3.99.8
-          extra_args: --results=verified,unknown
+          # Fichiers aux identifiants de dev volontaires (app:app, base locale ou
+          # conteneur de CI) : à exclure, sinon faux positifs « Postgres unknown »
+          extra_args: --results=verified,unknown --exclude-paths=.github/trufflehog-exclude.txt
 
   # Dépendances vulnérables (uv.lock, package-lock.json) et mauvaises
   # configurations (Dockerfile, compose.yml) dans le dépôt

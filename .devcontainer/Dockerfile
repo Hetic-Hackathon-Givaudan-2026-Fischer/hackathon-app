@@ -10,9 +10,13 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # uv épinglé (même version que api/Dockerfile et la CI) : binaire autonome
-COPY --from=ghcr.io/astral-sh/uv:0.11.11 /uv /uvx /usr/local/bin/
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/local/bin/
 
 # uv utilise le Python 3.13 de Debian, sans en télécharger un autre :
 # api/.venv reste aligné sur la version de l'image de l'API
 ENV UV_PYTHON_DOWNLOADS=never \
     UV_PYTHON_PREFERENCE=only-system
+
+# Non-root par défaut (Trivy DS-0002) : node (uid 1000) est déjà l'utilisateur
+# de compose.yml et de devcontainer.json ; ici, il vaut aussi pour un docker run
+USER node
