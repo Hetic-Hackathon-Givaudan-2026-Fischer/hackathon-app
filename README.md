@@ -9,13 +9,15 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
                                                  └──► API de l'équipe Data/IA (ngrok)  (mode 2)
 ```
 
-| Dossier          | Rôle                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------- |
-| `web/`           | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.                                      |
-| `api/`           | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
-| `db/init/`       | Schéma et données de test, joués au **premier** démarrage de la base.                                    |
-| `.devcontainer/` | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
-| `docs/adr/`      | Les décisions d'architecture (ADR), dont le choix de FastAPI ([0004](docs/adr/0004-backend-fastapi.md)). |
+| Dossier           | Rôle                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `web/`            | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.                                      |
+| `api/`            | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
+| `db/init/`        | Schéma et données de test, joués au **premier** démarrage de la base.                                    |
+| `.devcontainer/`  | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
+| `docs/adr/`       | Les décisions d'architecture (ADR), dont le choix de FastAPI ([0004](docs/adr/0004-backend-fastapi.md)). |
+| `.agents/skills/` | Les skills des agents IA, dont le skill officiel FastAPI ([section 3](#3-coder-dans-le-dev-container)).  |
+| `AGENTS.md`       | Les consignes pour les agents IA (Claude Code, Codex…).                                                  |
 
 **Sommaire**
 
@@ -239,9 +241,40 @@ Les règles, pour les humains comme pour les agents IA :
 - un endpoint reste mince : il reçoit un schéma, appelle un service, renvoie un schéma ;
 - la logique métier va dans `services/`, les requêtes SQL dans `repositories/` ;
 - tout accès externe (base, IA) passe par `api/deps.py` : en test, on le remplace sans toucher au code ;
-- une nouvelle version d'API se crée à côté (`api/v2/`), sans casser la v1.
+- une nouvelle version d'API se crée à côté (`api/v2/`), sans casser la v1 ;
+- pour l'écriture FastAPI elle-même (`Annotated`, types de retour, routers…), on suit le skill FastAPI (`.agents/skills/fastapi/`, voir ci-dessous).
 
 Le schéma de la base reste dans `db/init/*.sql`. Le pourquoi de ces choix : [ADR 0004](docs/adr/0004-backend-fastapi.md).
+
+</details>
+
+<details>
+<summary><b>Coder avec un agent IA : le skill FastAPI</b></summary>
+
+<br>
+
+`AGENTS.md` donne aux agents IA les règles du dépôt (Claude Code le lit via `CLAUDE.md`). Pour le code FastAPI, il les renvoie au **skill officiel de FastAPI**, versionné dans `.agents/skills/fastapi/` :
+
+| Fichier           | Contenu                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `SKILL.md`        | Les conventions : `Annotated`, types de retour, routers, async ou sync, streaming…        |
+| `references/*.md` | Le détail : dépendances, réponses, modèles de paramètres, Pydantic, streaming, outillage. |
+
+Pour s'en servir :
+
+| Agent       | Comment                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| Codex       | Il découvre seul les skills de `.agents/skills/` ; pour le forcer, mentionne `$fastapi` dans ta demande.           |
+| Claude Code | `AGENTS.md` lui demande de suivre le skill : précise-le dans ta demande (« en suivant `.agents/skills/fastapi` »). |
+| Humain      | Le skill se lit comme une doc : commence par la _Quick Reference_ de `SKILL.md`.                                   |
+
+> ⚠️ **Les ADR l'emportent sur le skill.** Le skill est générique ; là où il contredit un ADR « acceptée », c'est l'ADR qui gagne :
+>
+> | Le skill conseille                      | Ce dépôt fait                                                                  |
+> | --------------------------------------- | ------------------------------------------------------------------------------ |
+> | SQLModel plutôt que SQLAlchemy          | SQLAlchemy async + asyncpg ([ADR 0004](docs/adr/0004-backend-fastapi.md)).     |
+> | Lancer l'API avec `fastapi dev`         | `uvicorn --reload`, lancé par `api/Dockerfile` : passe par `docker compose`.   |
+> | Ajouter une bibliothèque (Asyncer, ty…) | Lire d'abord `docs/adr/` ; un changement de composant passe par un nouvel ADR. |
 
 </details>
 
