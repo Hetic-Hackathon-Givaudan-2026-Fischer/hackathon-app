@@ -2,3 +2,11 @@ node_modules/
 dist/
 .env
 db/data/
+# Python : environnement virtuel, bytecode, caches des outils
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
