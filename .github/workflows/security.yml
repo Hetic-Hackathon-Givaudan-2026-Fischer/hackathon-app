@@ -1,0 +1,66 @@
+name: Sécurité
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+# Lecture seule : les scans ne modifient rien
+permissions:
+  contents: read
+
+# Un nouveau push sur la PR annule le run précédent, devenu inutile
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions tierces épinglées par SHA de commit (tag en commentaire) : un tag peut
+# être déplacé, un SHA non (cf. la compromission des tags de trivy-action en 2026)
+jobs:
+  # Secrets commités (clés d'API, tokens, mots de passe) dans les commits de la PR
+  # ou du push. Échoue sur les secrets vérifiés ou invérifiables
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historique complet : TruffleHog scanne les commits entre base et head
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb # v3.99.8
+        with:
+          version: 3.99.8
+          # Fichiers aux identifiants de dev volontaires (app:app, base locale ou
+          # conteneur de CI) : à exclure, sinon faux positifs « Postgres unknown »
+          extra_args: --results=verified,unknown --exclude-paths=.github/trufflehog-exclude.txt
+
+  # Dépendances vulnérables (uv.lock, package-lock.json) et mauvaises
+  # configurations (Dockerfile, compose.yml) dans le dépôt
+  trivy-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig
+          severity: HIGH,CRITICAL
+          # Seulement ce qu'on peut corriger en montant de version
+          ignore-unfixed: true
+          exit-code: '1'
+
+  # Paquets système et Python de l'image de production de l'API
+  trivy-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Contexte à la racine : le Dockerfile monte api/pyproject.toml, api/uv.lock...
+      - run: docker build --file api/Dockerfile --target prod --tag api:${{ github.sha }} .
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: api:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'

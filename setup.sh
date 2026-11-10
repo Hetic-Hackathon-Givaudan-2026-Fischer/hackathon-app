@@ -146,7 +146,7 @@ check_ports() {
 # Pas « dev » : c'est le poste de travail des éditeurs, qui le lancent eux-mêmes.
 # db et install suivent via depends_on
 start_stack() {
-  step "Démarrage de la stack (le premier lancement télécharge les images)"
+  step "Démarrage de la stack (le premier lancement télécharge et construit les images)"
   docker compose up -d --wait api web ||
     fail "La stack n'a pas démarré" "Regarde les logs : docker compose logs install api web db"
   ok "Tous les services sont sains"
@@ -155,7 +155,8 @@ start_stack() {
 print_summary() {
   step "C'est prêt"
   printf '  Front        http://localhost:5173\n'
-  printf '  API          http://localhost:3000/api/health\n'
+  printf '  API          http://localhost:3000/api/v1/health\n'
+  printf '  Swagger      http://localhost:3000/api/docs\n'
   printf '  PostgreSQL   localhost:5433 (user/mdp : app)\n'
   printf '\n  Arrêter : docker compose down\n'
 }

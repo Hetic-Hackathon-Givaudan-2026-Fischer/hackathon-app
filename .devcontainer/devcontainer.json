@@ -18,16 +18,28 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "github.vscode-pull-request-github"
+        "github.vscode-pull-request-github",
+        "ms-python.python",
+        "charliermarsh.ruff"
       ],
       "settings": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+        "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" },
+        // L'environnement créé par post-create.sh (uv sync --project api)
+        "python.defaultInterpreterPath": "/workspace/api/.venv/bin/python",
+        // Python : Ruff remplace Prettier et ESLint (formatage, corrections, imports)
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+          }
+        }
       }
     },
     // Zed ne lit ici que les extensions : ses réglages sont dans .zed/settings.json
-    // (ESLint et Prettier sont intégrés à Zed, pas besoin d'extension)
+    // (ESLint, Prettier, Python et Ruff sont intégrés à Zed, pas besoin d'extension)
     "zed": {
       "extensions": ["dockerfile", "docker-compose"]
     }

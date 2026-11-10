@@ -3,18 +3,19 @@
 Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une IA locale (Ollama), le tout lancé avec Docker.
 
 ```
- navigateur ──► web (Vite, :5173) ──/api──► api (Express, :3000) ──► db (PostgreSQL, :5433)
+ navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
                                                  │
                                                  ├──► Ollama en direct               (mode 1, par défaut)
                                                  └──► API de l'équipe Data/IA (ngrok)  (mode 2)
 ```
 
-| Dossier          | Rôle                                                                  |
-| ---------------- | --------------------------------------------------------------------- |
-| `web/`           | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.   |
-| `api/`           | API Express 5 + TypeScript, rechargée à chaque modification.          |
-| `db/init/`       | Schéma et données de test, joués au **premier** démarrage de la base. |
-| `.devcontainer/` | Conteneur `dev` pour VS Code / Zed (Node 24 slim + git + `psql`).     |
+| Dossier          | Rôle                                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `web/`           | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.                                      |
+| `api/`           | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
+| `db/init/`       | Schéma et données de test, joués au **premier** démarrage de la base.                                    |
+| `.devcontainer/` | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
+| `docs/adr/`      | Les décisions d'architecture (ADR), dont le choix de FastAPI ([0004](docs/adr/0004-backend-fastapi.md)). |
 
 **Sommaire**
 
@@ -28,10 +29,10 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 
 > 💡 **Où lancer quoi ?** Ce projet a deux terminaux possibles : celui de **ta machine** (l'hôte) et celui du **dev container**. Ils ne servent pas à la même chose.
 >
-> | Terminal                            | Pour                                                    |
-> | ----------------------------------- | ------------------------------------------------------- |
-> | Ta machine (hôte)                   | `./setup.sh`, `docker compose …`, `ollama …`            |
-> | Dev container (`node@…:/workspace`) | Coder : `npm run lint`, `npm run format`, `git`, `psql` |
+> | Terminal                            | Pour                                                                 |
+> | ----------------------------------- | -------------------------------------------------------------------- |
+> | Ta machine (hôte)                   | `./setup.sh`, `docker compose …`, `ollama …`                         |
+> | Dev container (`node@…:/workspace`) | Coder : `npm run lint`, `uv run pytest` (dans `api/`), `git`, `psql` |
 
 ---
 
@@ -49,7 +50,7 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 | [Ollama](https://ollama.com/download)                           | Oui en mode 1 de l'IA (défaut) | `ollama --version`       |
 | VS Code (extension _Dev Containers_) ou [Zed](https://zed.dev/) | Non, pour coder dans Docker    |                          |
 
-Node n'est **pas** nécessaire sur ta machine : tout tourne dans les conteneurs.
+Ni Node ni Python ne sont nécessaires sur ta machine : tout tourne dans les conteneurs.
 
 </details>
 
@@ -114,7 +115,7 @@ Sous Linux, vérifie d'abord qu'Ollama écoute sur `0.0.0.0` ([section 1](#1-pr�
 docker compose up -d --wait api web
 ```
 
-`db` et `install` démarrent automatiquement avant. Au premier lancement, Docker télécharge les images et `install` fait un `npm ci` : compte une à deux minutes.
+`db` et `install` démarrent automatiquement avant. Au premier lancement, Docker télécharge les images, construit celle de l'API (dépendances Python) et `install` fait un `npm ci` : compte quelques minutes.
 
 **4. Vérifier**
 
@@ -152,17 +153,21 @@ Sous Windows : lance-le depuis **Git Bash** ou **WSL**.
 
 ### Ce qui tourne une fois lancé
 
-| URL                               | Quoi                                   |
-| --------------------------------- | -------------------------------------- |
-| http://localhost:5173             | Le front                               |
-| http://localhost:3000/api/health  | Santé de l'API et version de la base   |
-| `localhost:5433` (user/mdp `app`) | PostgreSQL (TablePlus, DBeaver, psql…) |
+| URL                                 | Quoi                                                        |
+| ----------------------------------- | ----------------------------------------------------------- |
+| http://localhost:5173               | Le front                                                    |
+| http://localhost:3000/api/v1/health | Santé de l'API et version de la base                        |
+| http://localhost:3000/api/docs      | Swagger : la documentation des routes, testables en un clic |
+| http://localhost:5173/api/docs      | Le même Swagger, à travers le proxy du front                |
+| `localhost:5433` (user/mdp `app`)   | PostgreSQL (TablePlus, DBeaver, psql…)                      |
 
 ---
 
 ## 3. Coder dans le dev container
 
-Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node, git, `psql`, ESLint et Prettier déjà configurés. Il démarre la stack tout seul s'il le faut.
+Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node, Python, uv, git, `psql`, ESLint, Prettier et ruff déjà configurés. Il démarre la stack tout seul s'il le faut.
+
+À la création, le conteneur installe les dépendances Python dans `api/.venv` (`uv sync`). `pyrightconfig.json`, à la racine, indique ce venv et le dossier `api/` à l'analyse Python de l'éditeur (basedpyright dans Zed, Pylance dans VS Code) : sans lui, les imports de `app` et de FastAPI apparaissent en erreur.
 
 > Le dev container ne gère **pas** Ollama : fais au moins une fois la méthode 1 ou 2 pour que le modèle soit téléchargé.
 
@@ -208,6 +213,39 @@ docker compose exec dev bash
 </details>
 
 <details>
+<summary><b>Structure de l'API</b> (<code>api/app/</code>)</summary>
+
+<br>
+
+```
+api/app/
+├── main.py              # crée l'app : connexions, routeur, gestion des erreurs
+├── core/config.py       # configuration, lue dans api/.env
+├── db/                  # connexion à PostgreSQL
+├── models/              # les tables (SQLAlchemy)
+├── schemas/             # les entrées et sorties de l'API (Pydantic)
+├── repositories/        # les requêtes SQL
+├── clients/ai.py        # les deux modes d'IA
+├── services/            # la logique métier
+└── api/
+    ├── deps.py          # l'injection : choisit base, IA, services
+    └── v1/
+        ├── router.py    # regroupe les endpoints de la v1
+        └── endpoints/   # health.py, questions.py
+```
+
+Les règles, pour les humains comme pour les agents IA :
+
+- un endpoint reste mince : il reçoit un schéma, appelle un service, renvoie un schéma ;
+- la logique métier va dans `services/`, les requêtes SQL dans `repositories/` ;
+- tout accès externe (base, IA) passe par `api/deps.py` : en test, on le remplace sans toucher au code ;
+- une nouvelle version d'API se crée à côté (`api/v2/`), sans casser la v1.
+
+Le schéma de la base reste dans `db/init/*.sql`. Le pourquoi de ces choix : [ADR 0004](docs/adr/0004-backend-fastapi.md).
+
+</details>
+
+<details>
 <summary><b>Vérifier que je suis bien dans le conteneur</b></summary>
 
 <br>
@@ -219,13 +257,15 @@ whoami   # node
 pwd      # /workspace
 ```
 
-| Commande                | Dev container ? | Pourquoi                                                            |
-| ----------------------- | --------------- | ------------------------------------------------------------------- |
-| `npm run lint / format` | ✅              | Node et les dépendances sont dans le conteneur.                     |
-| `git`, `gh`, `psql`     | ✅              | Installés dans l'image `dev`.                                       |
-| `./setup.sh`            | ❌ → hôte       | Il pilote Docker et Ollama de ta machine.                           |
-| `docker compose …`      | ❌ → hôte       | Pas de Docker dans le conteneur (ce serait un accès root à l'hôte). |
-| `ollama …`              | ❌ → hôte       | Ollama tourne sur ta machine.                                       |
+| Commande                | Dev container ?  | Pourquoi                                                            |
+| ----------------------- | ---------------- | ------------------------------------------------------------------- |
+| `npm run lint / format` | ✅               | Node et les dépendances sont dans le conteneur.                     |
+| `uv run pytest`         | ✅ (dans `api/`) | Python, uv et le venv `api/.venv` sont dans le conteneur.           |
+| `uv run ruff check`     | ✅ (dans `api/`) | Lint Python ; `uv run ruff format` pour la forme.                   |
+| `git`, `gh`, `psql`     | ✅               | Installés dans l'image `dev`.                                       |
+| `./setup.sh`            | ❌ → hôte        | Il pilote Docker et Ollama de ta machine.                           |
+| `docker compose …`      | ❌ → hôte        | Pas de Docker dans le conteneur (ce serait un accès root à l'hôte). |
+| `ollama …`              | ❌ → hôte        | Ollama tourne sur ta machine.                                       |
 
 </details>
 
@@ -296,13 +336,34 @@ Si leur machine se met en veille ou que le tunnel tombe, l'API abandonne au bout
 
 <br>
 
-| Commande                                 | Effet                                     |
-| ---------------------------------------- | ----------------------------------------- |
-| `docker compose ps`                      | État des services                         |
-| `docker compose logs -f api`             | Logs de l'API (ou `web`, `db`, `install`) |
-| `docker compose restart api`             | Après une modification de `api/.env`      |
-| `docker compose down`                    | Tout arrêter                              |
-| `docker compose exec db psql -U app app` | Console SQL                               |
+| Commande                                 | Effet                                      |
+| ---------------------------------------- | ------------------------------------------ |
+| `docker compose ps`                      | État des services                          |
+| `docker compose logs -f api`             | Logs de l'API (ou `web`, `db`, `install`)  |
+| `docker compose restart api`             | Après une modification de `api/.env`       |
+| `docker compose up -d --build api`       | Après une modification de `api/Dockerfile` |
+| `docker compose down`                    | Tout arrêter                               |
+| `docker compose exec db psql -U app app` | Console SQL                                |
+
+</details>
+
+<details>
+<summary><b>Ajouter une dépendance Python</b> (dans le dev container, dossier <code>api/</code>)</summary>
+
+<br>
+
+```bash
+cd api
+uv add <paquet>          # ou : uv add --dev <paquet> pour un outil de dev
+```
+
+`uv` met à jour `api/pyproject.toml` et `api/uv.lock` : commite les deux. Puis, depuis ta machine :
+
+```bash
+docker compose restart api
+```
+
+Au démarrage, l'API installe ce qui manque d'après `uv.lock` (`uv run --locked`). Les coéquipiers n'ont rien d'autre à faire qu'un `git pull` et ce redémarrage.
 
 </details>
 
@@ -322,24 +383,34 @@ rm -rf db/data
 </details>
 
 <details>
-<summary><b>Qualité du code : ESLint, Prettier et hook pre-commit</b> (depuis le dev container)</summary>
+<summary><b>Qualité du code : ESLint, Prettier, ruff, pytest et hook pre-commit</b> (depuis le dev container)</summary>
 
 <br>
 
 | Outil        | Rôle                                                                                                       |
 | ------------ | ---------------------------------------------------------------------------------------------------------- |
-| **ESLint**   | Détecte les erreurs probables (variable inutilisée, promesse oubliée, `any`…).                             |
-| **Prettier** | S'occupe de la forme (guillemets, indentation, retours à la ligne).                                        |
-| **husky**    | À chaque commit, lance **lint-staged** : ESLint (`--fix`) et Prettier sur les fichiers indexés uniquement. |
+| **ESLint**   | Front : détecte les erreurs probables (variable inutilisée, promesse oubliée, `any`…).                     |
+| **Prettier** | Front et docs : s'occupe de la forme (guillemets, indentation, retours à la ligne).                        |
+| **ruff**     | API : lint et formatage du Python.                                                                         |
+| **pytest**   | API : tests des services et des routes, base et IA simulées.                                               |
+| **husky**    | À chaque commit, lance **lint-staged** sur les fichiers indexés : ESLint et Prettier, ruff pour les `.py`. |
 
-Le dev container les branche dans VS Code et Zed : formatage à l'enregistrement, corrections ESLint à la demande.
+Le dev container les branche dans VS Code et Zed : formatage à l'enregistrement, corrections à la demande.
 
 À la racine, dans le conteneur `dev` :
 
 ```bash
-npm run lint           # ESLint sur tout le projet
+npm run lint           # ESLint sur le front
 npm run format         # Prettier réécrit les fichiers
 npm run format:check   # Prettier vérifie sans modifier (CI)
+```
+
+Dans `api/` :
+
+```bash
+uv run ruff check      # lint Python (--fix pour corriger)
+uv run ruff format     # formatage Python
+uv run pytest          # tests de l'API
 ```
 
 Le hook pre-commit s'active à la création du dev container (script `prepare`). `db/data` (dossier de PostgreSQL) est exclu. Une règle ESLint qui ne convient pas à l'équipe se désactive dans `eslint.config.mjs`, avec un commentaire qui la justifie.
@@ -369,12 +440,15 @@ Le hook pre-commit s'active à la création du dev container (script `prepare`).
 
 <br>
 
-| Symptôme                                                | Cause probable / solution                                                                  |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `POST /api/questions` → `fetch failed` / `ECONNREFUSED` | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : [section 1](#1-prérequis)). |
-| `IA : 404 … model "llama3.2:1b" not found`              | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                                |
-| `IA Data : 401 …`                                       | `DATA_AI_KEY` (`api/.env`) ne correspond pas à la clé de l'équipe Data/IA.                 |
-| `IA Data : … timeout` / `aborted`                       | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.         |
+Une erreur de l'IA renvoie `502` avec un message court (`IA : …` en mode 1, `IA Data : …` en mode 2) ; le détail du fournisseur est dans `docker compose logs api`.
+
+| Symptôme                                              | Cause probable / solution                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `POST /api/v1/questions` → `502`, `IA : indisponible` | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : [section 1](#1-prérequis)). |
+| `502`, `IA : erreur 404` (logs : `model … not found`) | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                                |
+| `502`, `IA Data : erreur 401`                         | `DATA_AI_KEY` (`api/.env`) ne correspond pas à la clé de l'équipe Data/IA.                 |
+| `502`, `IA Data : indisponible` (logs : timeout)      | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.         |
+| `POST /api/v1/questions` → `422`                      | La question est vide ou absente : le détail est dans la réponse (validation Pydantic).     |
 
 </details>
 

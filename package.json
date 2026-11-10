@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "api",
     "web"
   ],
   "scripts": {
-    "dev": "concurrently -n api,web \"npm run dev -w api\" \"npm run dev -w web\"",
+    "dev": "concurrently -n api,web \"npm run dev:api\" \"npm run dev -w web\"",
+    "dev:api": "uv run --locked --directory api uvicorn app.main:app --reload --reload-dir app --port 3000",
     "build": "npm run build --workspaces",
     "lint": "eslint .",
     "format": "prettier --write . '!db/data'",
@@ -19,7 +19,11 @@
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,md,yml,yaml,html,css}": "prettier --write"
+    "*.{json,md,yml,yaml,html,css}": "prettier --write",
+    "*.py": [
+      "uv run --frozen --project api ruff check --fix",
+      "uv run --frozen --project api ruff format"
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

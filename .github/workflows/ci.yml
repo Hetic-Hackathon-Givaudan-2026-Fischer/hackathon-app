@@ -6,6 +6,7 @@ on:
     branches: [main, develop]
 
 jobs:
+  # Le front et la configuration du dépôt : ESLint, Prettier, build Vite
   qualite:
     runs-on: ubuntu-latest
     # Même Node et même Debian que le dev container
@@ -16,3 +17,18 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run build
+
+  # L'API FastAPI : Ruff (lint + format). Les tests sont dans tests.yml
+  api:
+    runs-on: ubuntu-latest
+    # Même Python (3.13), même uv et même Debian que api/Dockerfile et le dev container
+    container: ghcr.io/astral-sh/uv:0.13.7-python3.13-trixie-slim
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7
+      # --locked : échoue si uv.lock ne correspond plus à pyproject.toml
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check
