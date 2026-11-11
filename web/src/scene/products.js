@@ -1,22 +1,107 @@
 import * as THREE from 'three';
-import { TYPEFACE, menuColor } from '../brand.js';
+import { TYPEFACE } from '../brand.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export const CATEGORIES = [
-  { id: 'desserts-lactes', name: 'Desserts lactés', blurb: 'Yaourts, crèmes dessert et entremets aux arômes du moment.', type: 'fridge', accent: 0xf2c6cf },
-  { id: 'produits-laitiers', name: 'Produits laitiers', blurb: 'Laits, fromages et crèmes dont le profil aromatique suit les tendances.', type: 'fridge', accent: 0x3a7ca5 },
-  { id: 'boissons', name: 'Boissons', blurb: 'Eaux, sodas et boissons fruitées guidées par les notes d’arôme.', type: 'fridge', accent: 0xe63946 },
-  { id: 'glaces', name: 'Glaces et desserts glacés', blurb: 'Pots et cornets aux parfums saisonniers.', type: 'fridge', accent: 0x90e0ef },
-  { id: 'confiseries', name: 'Confiseries', blurb: 'Bonbons et sucreries aux goûts tendance.', type: 'gondola', accent: 0xff4d6d },
-  { id: 'chocolats', name: 'Chocolats et produits chocolatés', blurb: 'Tablettes et enrobés aux inclusions aromatiques.', type: 'gondola', accent: 0x5c2a0a },
-  { id: 'biscuits', name: 'Biscuits et pâtisseries', blurb: 'Sablés et gâteaux dont la recette joue sur l’arôme.', type: 'gondola', accent: 0xc0843c },
-  { id: 'viennoiseries', name: 'Viennoiseries et produits de boulangerie', blurb: 'Croissants et pains sucrés aux notes gourmandes.', type: 'gondola', accent: 0xe0a45a },
-  { id: 'cereales', name: 'Céréales et produits du petit-déjeuner', blurb: 'Flocons et nappages aux parfums du matin.', type: 'gondola', accent: 0xef476f },
-  { id: 'snacks', name: 'Snacks et produits apéritifs', blurb: 'Sachet croustillant aux assaisonnements aromatiques.', type: 'gondola', accent: 0xf77f00 },
-  { id: 'sauces', name: 'Sauces et condiments', blurb: 'Flacons et marinades aux profils épicés ou fruités.', type: 'gondola', accent: 0x9b2226 },
-  { id: 'plats', name: 'Plats préparés et produits traiteur', blurb: 'Barquettes dont la signature passe par l’arôme.', type: 'gondola', accent: 0xd62828 },
-  { id: 'vegetal', name: 'Produits végétaux et alternatives alimentaires', blurb: 'Blocs et alternatives dont le goût est travaillé par l’arôme.', type: 'gondola', accent: 0x2d6a4f },
-  { id: 'nutrition', name: 'Produits nutritionnels et sportifs', blurb: 'Shakers et barres aux goûts protéines du moment.', type: 'gondola', accent: 0x1d3557 },
+  {
+    id: 'desserts-lactes',
+    name: 'Desserts lactés',
+    blurb: 'Yaourts, crèmes dessert et entremets aux arômes du moment.',
+    type: 'fridge',
+    accent: 0xf2c6cf,
+  },
+  {
+    id: 'produits-laitiers',
+    name: 'Produits laitiers',
+    blurb:
+      'Laits, fromages et crèmes dont le profil aromatique suit les tendances.',
+    type: 'fridge',
+    accent: 0x3a7ca5,
+  },
+  {
+    id: 'boissons',
+    name: 'Boissons',
+    blurb: 'Eaux, sodas et boissons fruitées guidées par les notes d’arôme.',
+    type: 'fridge',
+    accent: 0xe63946,
+  },
+  {
+    id: 'glaces',
+    name: 'Glaces et desserts glacés',
+    blurb: 'Pots et cornets aux parfums saisonniers.',
+    type: 'fridge',
+    accent: 0x90e0ef,
+  },
+  {
+    id: 'confiseries',
+    name: 'Confiseries',
+    blurb: 'Bonbons et sucreries aux goûts tendance.',
+    type: 'gondola',
+    accent: 0xff4d6d,
+  },
+  {
+    id: 'chocolats',
+    name: 'Chocolats et produits chocolatés',
+    blurb: 'Tablettes et enrobés aux inclusions aromatiques.',
+    type: 'gondola',
+    accent: 0x5c2a0a,
+  },
+  {
+    id: 'biscuits',
+    name: 'Biscuits et pâtisseries',
+    blurb: 'Sablés et gâteaux dont la recette joue sur l’arôme.',
+    type: 'gondola',
+    accent: 0xc0843c,
+  },
+  {
+    id: 'viennoiseries',
+    name: 'Viennoiseries et produits de boulangerie',
+    blurb: 'Croissants et pains sucrés aux notes gourmandes.',
+    type: 'gondola',
+    accent: 0xe0a45a,
+  },
+  {
+    id: 'cereales',
+    name: 'Céréales et produits du petit-déjeuner',
+    blurb: 'Flocons et nappages aux parfums du matin.',
+    type: 'gondola',
+    accent: 0xef476f,
+  },
+  {
+    id: 'snacks',
+    name: 'Snacks et produits apéritifs',
+    blurb: 'Sachet croustillant aux assaisonnements aromatiques.',
+    type: 'gondola',
+    accent: 0xf77f00,
+  },
+  {
+    id: 'sauces',
+    name: 'Sauces et condiments',
+    blurb: 'Flacons et marinades aux profils épicés ou fruités.',
+    type: 'gondola',
+    accent: 0x9b2226,
+  },
+  {
+    id: 'plats',
+    name: 'Plats préparés et produits traiteur',
+    blurb: 'Barquettes dont la signature passe par l’arôme.',
+    type: 'gondola',
+    accent: 0xd62828,
+  },
+  {
+    id: 'vegetal',
+    name: 'Produits végétaux et alternatives alimentaires',
+    blurb: 'Blocs et alternatives dont le goût est travaillé par l’arôme.',
+    type: 'gondola',
+    accent: 0x2d6a4f,
+  },
+  {
+    id: 'nutrition',
+    name: 'Produits nutritionnels et sportifs',
+    blurb: 'Shakers et barres aux goûts protéines du moment.',
+    type: 'gondola',
+    accent: 0x1d3557,
+  },
 ];
 
 const VARIANTS = {
@@ -34,6 +119,58 @@ const VARIANTS = {
   plats: [0xd62828, 0x588157, 0xe9c46a, 0x457b9d],
   vegetal: [0x40916c, 0x95d5b2, 0x1b4332, 0xd8f3dc],
   nutrition: [0x1d3557, 0xe63946, 0x457b9d, 0xf1faee],
+};
+
+const NAMES = {
+  'desserts-lactes': [
+    'Yaourt vanille',
+    'Crème caramel',
+    'Yaourt fraise',
+    'Crème chocolat',
+  ],
+  'produits-laitiers': [
+    'Lait entier',
+    'Crème fraîche',
+    'Beurre doux',
+    'Fromage blanc',
+  ],
+  boissons: ['Soda cola', 'Eau gazeuse', 'Jus orange', 'Thé pêche'],
+  glaces: ['Glace vanille', 'Glace menthe', 'Glace citron', 'Glace cassis'],
+  confiseries: [
+    'Bonbon fraise',
+    'Bonbon citron',
+    'Réglisse douce',
+    'Dragée amande',
+  ],
+  chocolats: [
+    'Chocolat noir',
+    'Chocolat lait',
+    'Chocolat noisette',
+    'Chocolat blanc',
+  ],
+  biscuits: [
+    'Sablé nature',
+    'Cookie pépites',
+    'Biscuit chocolat',
+    'Gaufre vanille',
+  ],
+  viennoiseries: [
+    'Croissant beurre',
+    'Pain chocolat',
+    'Chausson pomme',
+    'Brioche sucrée',
+  ],
+  cereales: [
+    'Flocons avoine',
+    'Muesli fruits',
+    'Céréales miel',
+    'Pétales chocolat',
+  ],
+  snacks: ['Chips nature', 'Chips paprika', 'Chips barbecue', 'Tuiles fromage'],
+  sauces: ['Sauce bbq', 'Sauce tomate', 'Ketchup nature', 'Sauce mayo'],
+  plats: ['Poulet rôti', 'Lasagnes bœuf', 'Riz cantonais', 'Gratin légumes'],
+  vegetal: ['Steak végétal', 'Tofu nature', 'Galette légumes', 'Lait avoine'],
+  nutrition: ['Whey vanille', 'Barre cacao', 'Shaker fraise', 'Boisson cacao'],
 };
 
 const materials = new Map();
@@ -61,127 +198,237 @@ function std(color, extras = {}) {
   return material;
 }
 
-function labelCanvas(bg, band, title) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#FAF9F6';
-  ctx.fillRect(0, 0, 256, 256);
-  ctx.fillStyle = bg;
-  ctx.fillRect(18, 148, 220, 86);
+const labelMaterials = new Map();
+
+function paintWords(ctx, width, height, name) {
+  const words = name.split(' ');
+  ctx.fillStyle = '#FFFDF8';
+  ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#0B1215';
-  ctx.font = `500 26px ${TYPEFACE}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(title, 128, 78);
-  ctx.fillStyle = band;
-  ctx.fillRect(96, 112, 64, 2);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+  const maxWidth = width * 0.9;
+  const maxHeight = height * 0.84;
+  let size = Math.floor(maxHeight / words.length);
+  const widest = () => {
+    ctx.font = `500 ${size}px ${TYPEFACE}`;
+    return words.reduce(
+      (max, word) => Math.max(max, ctx.measureText(word).width),
+      0,
+    );
+  };
+  while (size > 36 && widest() > maxWidth) size -= 2;
+  const gap = Math.round(size * 0.16);
+  while (
+    size > 36 &&
+    size * words.length + gap * (words.length - 1) > maxHeight
+  )
+    size -= 2;
+  ctx.font = `500 ${size}px ${TYPEFACE}`;
+  const block = size * words.length + gap * (words.length - 1);
+  let y = (height - block) / 2 + size / 2;
+  for (const word of words) {
+    ctx.fillText(word, width / 2, y);
+    y += size + gap;
+  }
 }
 
-function yogurtCup(color) {
+function faceLabel(name, width, height) {
+  const key = `${name}|${width}|${height}`;
+  let material = labelMaterials.get(key);
+  if (!material) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = Math.max(256, Math.round(1024 * (height / width)));
+    paintWords(canvas.getContext('2d'), canvas.width, canvas.height, name);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 8;
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+    labelMaterials.set(key, material);
+  }
+  const label = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, height),
+    material,
+  );
+  label.userData.label = true;
+  return label;
+}
+
+function yogurtCup(color, name) {
   const g = new THREE.Group();
   const sleeve = std(color);
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.033, 0.072, 20), sleeve);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.003, 6, 18), std(0xf7f3ea));
+  const cup = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.042, 0.036, 0.078, 20),
+    sleeve,
+  );
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.042, 0.003, 6, 18),
+    std(0xf7f3ea),
+  );
   const foil = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.039, 0.039, 0.004, 20),
+    new THREE.CylinderGeometry(0.043, 0.043, 0.004, 20),
     std(0xc9cdd1, { metalness: 0.65, roughness: 0.22 }),
   );
-  const tab = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.002, 0.02), std(0x78608d, { metalness: 0.45 }));
-  const lip = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.038, 0.006, 20), std(0xf7f3ea));
-  cup.position.y = 0.036;
-  lip.position.y = 0.07;
-  rim.position.y = 0.072;
+  const tab = new THREE.Mesh(
+    new THREE.BoxGeometry(0.012, 0.002, 0.02),
+    std(0x78608d, { metalness: 0.45 }),
+  );
+  const lip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.044, 0.042, 0.006, 20),
+    std(0xf7f3ea),
+  );
+  const label = faceLabel(name, 0.064, 0.036);
+  cup.position.y = 0.039;
+  lip.position.y = 0.076;
+  rim.position.y = 0.078;
   rim.rotation.x = Math.PI / 2;
-  foil.position.y = 0.075;
-  tab.position.set(0.028, 0.077, 0);
-  g.add(cup, lip, rim, foil, tab);
+  foil.position.y = 0.081;
+  tab.position.set(0.03, 0.083, 0);
+  label.position.set(0, 0.042, 0.043);
+  g.add(cup, lip, rim, foil, tab, label);
   return g;
 }
 
-function milkCarton(color) {
+function milkCarton(color, name) {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.125, 0.055), std(0xf6f3ec));
-  const band = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.038, 0.056), std(color));
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.012, 10), std(color, { roughness: 0.3 }));
-  const roofL = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.002, 0.04), std(0xf6f3ec));
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(0.072, 0.128, 0.05),
+    std(0xf6f3ec),
+  );
+  const band = new THREE.Mesh(
+    new THREE.BoxGeometry(0.074, 0.04, 0.052),
+    std(color),
+  );
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.01, 0.012, 10),
+    std(color, { roughness: 0.3 }),
+  );
+  const roofL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.074, 0.002, 0.036),
+    std(0xf6f3ec),
+  );
   const roofR = roofL.clone();
-  body.position.y = 0.062;
-  band.position.y = 0.072;
-  roofL.position.set(0, 0.138, 0.01);
+  const label = faceLabel(name, 0.064, 0.04);
+  body.position.y = 0.064;
+  band.position.y = 0.074;
+  roofL.position.set(0, 0.142, 0.01);
   roofL.rotation.x = 0.85;
-  roofR.position.set(0, 0.138, -0.01);
+  roofR.position.set(0, 0.142, -0.01);
   roofR.rotation.x = -0.85;
-  cap.position.set(0, 0.155, 0);
-  g.add(body, band, roofL, roofR, cap);
+  cap.position.set(0, 0.16, 0);
+  label.position.set(0, 0.072, 0.027);
+  g.add(body, band, roofL, roofR, cap, label);
   return g;
 }
 
-function sodaCan(color) {
+function sodaCan(color, name) {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.029, 0.029, 0.105, 22), std(color, { roughness: 0.28, metalness: 0.35 }));
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.029, 0.012, 18), std(0xd9dde1, { metalness: 0.7, roughness: 0.2 }));
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.004, 18), std(0xcfd4d8, { metalness: 0.75, roughness: 0.18 }));
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.0025, 6, 18), std(0xe8eaed, { metalness: 0.8 }));
-  const tab = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.0015, 0.02), std(0xd0d5da, { metalness: 0.8 }));
-  body.position.y = 0.052;
-  neck.position.y = 0.11;
-  top.position.y = 0.118;
-  rim.position.y = 0.118;
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.036, 0.036, 0.112, 24),
+    std(color, { roughness: 0.28, metalness: 0.35 }),
+  );
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.036, 0.012, 20),
+    std(0xd9dde1, { metalness: 0.7, roughness: 0.2 }),
+  );
+  const top = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.004, 20),
+    std(0xcfd4d8, { metalness: 0.75, roughness: 0.18 }),
+  );
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.03, 0.0025, 6, 20),
+    std(0xe8eaed, { metalness: 0.8 }),
+  );
+  const tab = new THREE.Mesh(
+    new THREE.BoxGeometry(0.012, 0.0015, 0.02),
+    std(0xd0d5da, { metalness: 0.8 }),
+  );
+  const label = faceLabel(name, 0.056, 0.034);
+  body.position.y = 0.056;
+  neck.position.y = 0.118;
+  top.position.y = 0.126;
+  rim.position.y = 0.126;
   rim.rotation.x = Math.PI / 2;
-  tab.position.set(0, 0.121, 0.004);
-  g.add(body, neck, top, rim, tab);
+  tab.position.set(0, 0.129, 0.004);
+  label.position.set(0, 0.056, 0.037);
+  g.add(body, neck, top, rim, tab, label);
   return g;
 }
 
-function iceCreamTub(color) {
+function iceCreamTub(color, name) {
   const g = new THREE.Group();
-  const tub = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.052, 0.07, 20), std(0xf8f4ea));
-  const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.049, 0.053, 0.035, 20), std(color));
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.054, 0.01, 20), std(color, { roughness: 0.35 }));
-  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.008, 10), std(0xf8f4ea));
-  tub.position.y = 0.035;
-  wrap.position.y = 0.038;
-  lid.position.y = 0.075;
-  knob.position.y = 0.084;
-  g.add(tub, wrap, lid, knob);
+  const tub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.052, 0.056, 0.078, 24),
+    std(0xf8f4ea),
+  );
+  const wrap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.053, 0.057, 0.04, 24),
+    std(color),
+  );
+  const lid = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.058, 0.058, 0.01, 24),
+    std(color, { roughness: 0.35 }),
+  );
+  const knob = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.014, 0.008, 10),
+    std(0xf8f4ea),
+  );
+  const label = faceLabel(name, 0.072, 0.038);
+  tub.position.y = 0.039;
+  wrap.position.y = 0.042;
+  lid.position.y = 0.083;
+  knob.position.y = 0.092;
+  label.position.set(0, 0.042, 0.058);
+  g.add(tub, wrap, lid, knob, label);
   return g;
 }
 
-function candy(color) {
+function candy(color, name) {
   const g = new THREE.Group();
   const film = std(color, { roughness: 0.4 });
-  const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.086, 0.022), film);
-  const seal = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.008, 0.008), std(0xf7f4ee, { roughness: 0.5 }));
-  const mark = new THREE.Mesh(new THREE.CircleGeometry(0.01, 14), std(0xfff6d8));
-  pouch.position.y = 0.043;
-  seal.position.y = 0.088;
-  mark.position.set(0, 0.046, 0.012);
-  g.add(pouch, seal, mark);
+  const pouch = new THREE.Mesh(
+    new THREE.BoxGeometry(0.078, 0.096, 0.024),
+    film,
+  );
+  const seal = new THREE.Mesh(
+    new THREE.BoxGeometry(0.078, 0.008, 0.008),
+    std(0xf7f4ee, { roughness: 0.5 }),
+  );
+  const label = faceLabel(name, 0.068, 0.04);
+  pouch.position.y = 0.048;
+  seal.position.y = 0.098;
+  label.position.set(0, 0.046, 0.013);
+  g.add(pouch, seal, label);
   return g;
 }
 
-function chocolateBar(color) {
+function chocolateBar(color, name) {
   const g = new THREE.Group();
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.015, 0.052), std(color, { roughness: 0.34, metalness: 0.08 }));
-  const band = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.017, 0.054), std(0xf6f1e4, { roughness: 0.5 }));
-  bar.position.y = 0.008;
-  band.position.y = 0.008;
-  g.add(bar, band);
+  const bar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.118, 0.016),
+    std(color, { roughness: 0.34, metalness: 0.08 }),
+  );
+  const label = faceLabel(name, 0.072, 0.042);
+  bar.position.y = 0.059;
+  label.position.set(0, 0.06, 0.009);
+  g.add(bar, label);
   return g;
 }
 
-function biscuitPack(color) {
+function biscuitPack(color, name) {
   const g = new THREE.Group();
-  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.044, 0.03), std(color));
-  const window = new THREE.Mesh(new THREE.PlaneGeometry(0.048, 0.022), std(0xf3e2c0, { roughness: 0.4 }));
-  pack.position.y = 0.022;
-  window.position.set(0, 0.023, 0.0155);
-  g.add(pack, window);
+  const pack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.104, 0.056, 0.032),
+    std(color),
+  );
+  const label = faceLabel(name, 0.092, 0.042);
+  pack.position.y = 0.028;
+  label.position.set(0, 0.028, 0.017);
+  g.add(pack, label);
   return g;
 }
 
@@ -253,8 +500,12 @@ function appendCrescent(positions, colors, indices, spec) {
     }
     const along = (t - t0) / (t1 - t0);
     const belly = Math.sin(Math.PI * along);
-    const pinch = THREE.MathUtils.smoothstep(Math.min(along, 1 - along), 0.015, 0.11);
-    const taper = (belly ** taperPower) * (0.55 + 0.45 * pinch);
+    const pinch = THREE.MathUtils.smoothstep(
+      Math.min(along, 1 - along),
+      0.015,
+      0.11,
+    );
+    const taper = belly ** taperPower * (0.55 + 0.45 * pinch);
     const localTube = tube * Math.max(0.04, taper);
 
     for (let j = 0; j <= radial; j += 1) {
@@ -264,7 +515,8 @@ function appendCrescent(positions, colors, indices, spec) {
       const facing = Math.sin(v);
       const lip = taper * Math.max(0, stripe);
       const ridge = 1 + lip * 0.32;
-      const n = outward * localTube * ridge * (0.88 + 0.22 * Math.max(0, outward));
+      const n =
+        outward * localTube * ridge * (0.88 + 0.22 * Math.max(0, outward));
       const b = facing * localTube * ridge * depth;
       positions.push(point.x + nx * n, point.y + ny * n, point.z + b);
 
@@ -325,178 +577,226 @@ function croissantGeometry(tint) {
   }
   geo.computeBoundingBox();
   const box = geo.boundingBox;
-  geo.translate(-(box.min.x + box.max.x) * 0.5, -box.min.y, -(box.min.z + box.max.z) * 0.15);
+  geo.translate(
+    -(box.min.x + box.max.x) * 0.5,
+    -box.min.y,
+    -(box.min.z + box.max.z) * 0.15,
+  );
   geo.computeVertexNormals();
   return geo;
 }
 
-function croissant(tint) {
+function croissant(tint, name) {
   const g = new THREE.Group();
   g.add(new THREE.Mesh(croissantGeometry(tint), pastryMaterial));
+  const label = faceLabel(name, 0.062, 0.034);
+  label.position.set(0, 0.022, 0.03);
+  g.add(label);
   return g;
 }
 
-function cerealBox(color, title, accent) {
+function cerealBox(color, name) {
   const g = new THREE.Group();
-  const tex = labelCanvas(`#${color.toString(16).padStart(6, '0')}`, accent, title.slice(0, 12));
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.145, 0.032), std(color));
-  const label = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.068, 0.1),
-    std(0xffffff, { map: tex, roughness: 0.55 }),
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(0.092, 0.152, 0.036),
+    std(color),
   );
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.006, 0.032), std(color));
-  box.position.y = 0.072;
-  lid.position.y = 0.147;
-  label.position.set(0, 0.078, 0.017);
+  const label = faceLabel(name, 0.082, 0.048);
+  const lid = new THREE.Mesh(
+    new THREE.BoxGeometry(0.092, 0.006, 0.036),
+    std(color),
+  );
+  box.position.y = 0.076;
+  lid.position.y = 0.155;
+  label.position.set(0, 0.082, 0.019);
   g.add(box, lid, label);
   return g;
 }
 
-function chipsBag(color) {
+function chipsBag(color, name) {
   const g = new THREE.Group();
   const shape = new THREE.Shape();
-  shape.moveTo(-0.012, 0.002);
-  shape.lineTo(-0.026, 0.014);
-  shape.bezierCurveTo(-0.032, 0.042, -0.03, 0.1, -0.022, 0.128);
-  shape.lineTo(-0.013, 0.142);
-  shape.lineTo(0.013, 0.142);
-  shape.lineTo(0.022, 0.128);
-  shape.bezierCurveTo(0.03, 0.1, 0.032, 0.042, 0.026, 0.014);
-  shape.lineTo(0.012, 0.002);
+  shape.moveTo(-0.016, 0.002);
+  shape.lineTo(-0.036, 0.016);
+  shape.bezierCurveTo(-0.046, 0.046, -0.044, 0.108, -0.032, 0.138);
+  shape.lineTo(-0.018, 0.154);
+  shape.lineTo(0.018, 0.154);
+  shape.lineTo(0.032, 0.138);
+  shape.bezierCurveTo(0.044, 0.108, 0.046, 0.046, 0.036, 0.016);
+  shape.lineTo(0.016, 0.002);
   shape.closePath();
   const geom = new THREE.ExtrudeGeometry(shape, {
-    depth: 0.014,
+    depth: 0.016,
     bevelEnabled: true,
     bevelThickness: 0.003,
     bevelSize: 0.003,
     bevelSegments: 1,
     curveSegments: 10,
   });
-  geom.translate(0, 0, -0.007);
+  geom.translate(0, 0, -0.008);
   const bag = new THREE.Mesh(geom, std(color, { roughness: 0.45 }));
-  const logo = new THREE.Mesh(new THREE.CircleGeometry(0.011, 14), std(0xfaf9f6));
-  logo.position.set(0, 0.078, 0.012);
-  g.add(bag, logo);
+  const label = faceLabel(name, 0.064, 0.038);
+  label.position.set(0, 0.078, 0.014);
+  g.add(bag, label);
   return g;
 }
 
-function sauceBottle(color) {
+function sauceBottle(color, name) {
   const g = new THREE.Group();
   const glass = std(color, { roughness: 0.2, metalness: 0.08 });
   const capMat = std(0xf4f1ea, { roughness: 0.32, metalness: 0.28 });
-  const labelMat = std(0xf7f3e8, { roughness: 0.58 });
-  const bodyR = 0.0235;
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(bodyR, bodyR, 0.072, 8), glass);
-  const shoulder = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, bodyR, 0.02, 8), glass);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.0084, 0.011, 0.028, 16), glass);
-  const lip = new THREE.Mesh(new THREE.CylinderGeometry(0.0102, 0.0102, 0.006, 16), glass);
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.0112, 0.0118, 0.011, 20), capMat);
-  body.position.y = 0.036;
-  shoulder.position.y = 0.082;
-  neck.position.y = 0.106;
-  lip.position.y = 0.123;
-  cap.position.y = 0.1315;
-  body.rotation.y = Math.PI / 8;
-  shoulder.rotation.y = Math.PI / 8;
-  const keystone = new THREE.Shape();
-  keystone.moveTo(0.008, 0.016);
-  keystone.lineTo(-0.008, 0.016);
-  keystone.lineTo(-0.0046, -0.014);
-  keystone.lineTo(0.0046, -0.014);
-  keystone.closePath();
-  const label = new THREE.Mesh(new THREE.ShapeGeometry(keystone), labelMat);
-  label.position.set(0, 0.04, bodyR * Math.cos(Math.PI / 8) + 0.0015);
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.0122, 0.0122, 0.009, 16), labelMat);
-  band.position.y = 0.1;
-  g.add(body, shoulder, neck, lip, cap, label, band);
+  const bodyR = 0.034;
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(bodyR, bodyR, 0.082, 24),
+    glass,
+  );
+  const shoulder = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.016, bodyR, 0.022, 24),
+    glass,
+  );
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.011, 0.014, 0.03, 16),
+    glass,
+  );
+  const lip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.013, 0.013, 0.006, 16),
+    glass,
+  );
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.014, 0.015, 0.012, 20),
+    capMat,
+  );
+  const label = faceLabel(name, 0.052, 0.034);
+  body.position.y = 0.041;
+  shoulder.position.y = 0.093;
+  neck.position.y = 0.119;
+  lip.position.y = 0.137;
+  cap.position.y = 0.146;
+  label.position.set(0, 0.044, bodyR + 0.001);
+  g.add(body, shoulder, neck, lip, cap, label);
   return g;
 }
 
-function mealTray(color) {
+function mealTray(color, name) {
   const g = new THREE.Group();
-  const tray = new THREE.Mesh(new THREE.BoxGeometry(0.128, 0.016, 0.088), std(0x1c1c1c));
-  const rim = new THREE.Mesh(new THREE.BoxGeometry(0.136, 0.006, 0.096), std(0x2a2a2a));
-  const main = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.008, 0.07), std(color));
-  const side = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.032), std(0x588157));
-  const sideB = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.028), std(0xe9c46a));
+  const tray = new THREE.Mesh(
+    new THREE.BoxGeometry(0.128, 0.016, 0.088),
+    std(0x1c1c1c),
+  );
+  const rim = new THREE.Mesh(
+    new THREE.BoxGeometry(0.136, 0.006, 0.096),
+    std(0x2a2a2a),
+  );
+  const main = new THREE.Mesh(
+    new THREE.BoxGeometry(0.068, 0.008, 0.07),
+    std(color),
+  );
+  const side = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, 0.008, 0.032),
+    std(0x588157),
+  );
+  const sideB = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, 0.008, 0.028),
+    std(0xe9c46a),
+  );
   const film = new THREE.Mesh(
     new THREE.BoxGeometry(0.124, 0.002, 0.084),
     std(0xdbeafe, { transparent: true, opacity: 0.32, roughness: 0.08 }),
   );
-  const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.012, 0.016), std(0xfaf9f6));
+  const label = faceLabel(name, 0.1, 0.046);
   tray.position.y = 0.008;
   rim.position.y = 0.016;
   main.position.set(-0.022, 0.014, 0);
   side.position.set(0.036, 0.014, -0.016);
   sideB.position.set(0.036, 0.014, 0.018);
   film.position.y = 0.021;
-  sleeve.position.set(0, 0.012, 0.048);
-  g.add(tray, rim, main, side, sideB, film, sleeve);
+  label.position.set(0, 0.042, 0.05);
+  g.add(tray, rim, main, side, sideB, film, label);
   return g;
 }
 
-function plantPack(color) {
+function plantPack(color, name) {
   const g = new THREE.Group();
   const tray = new THREE.Mesh(
-    new THREE.BoxGeometry(0.088, 0.03, 0.058),
+    new THREE.BoxGeometry(0.096, 0.032, 0.062),
     std(0xd5e0da, { roughness: 0.28, transparent: true, opacity: 0.5 }),
   );
-  const block = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.02, 0.044), std(0xf7f4ec));
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.004, 0.058), std(color));
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.088, 0.004, 0.012), std(0x2d6a4f));
-  tray.position.y = 0.015;
-  block.position.y = 0.016;
-  lid.position.y = 0.032;
-  stripe.position.set(0, 0.035, 0.016);
-  g.add(tray, block, lid, stripe);
+  const block = new THREE.Mesh(
+    new THREE.BoxGeometry(0.076, 0.022, 0.046),
+    std(0xf7f4ec),
+  );
+  const lid = new THREE.Mesh(
+    new THREE.BoxGeometry(0.096, 0.004, 0.062),
+    std(color),
+  );
+  const label = faceLabel(name, 0.08, 0.04);
+  tray.position.y = 0.016;
+  block.position.y = 0.017;
+  lid.position.y = 0.034;
+  label.position.set(0, 0.048, 0.032);
+  g.add(tray, block, lid, label);
   return g;
 }
 
-function proteinTub(color) {
+function proteinTub(color, name) {
   const g = new THREE.Group();
-  const tub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.044, 0.092, 24), std(color, { roughness: 0.4 }));
-  const label = new THREE.Mesh(new THREE.CylinderGeometry(0.0415, 0.0455, 0.04, 24), std(0xf1faee));
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.016, 24), std(0x13293d, { roughness: 0.34 }));
-  tub.position.y = 0.046;
-  label.position.y = 0.046;
-  lid.position.y = 0.1;
-  g.add(tub, label, lid);
+  const tub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.046, 0.05, 0.1, 24),
+    std(color, { roughness: 0.4 }),
+  );
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.0475, 0.0515, 0.046, 24),
+    std(0xf1faee),
+  );
+  const lid = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.054, 0.054, 0.016, 24),
+    std(0x13293d, { roughness: 0.34 }),
+  );
+  const label = faceLabel(name, 0.068, 0.04);
+  tub.position.y = 0.05;
+  band.position.y = 0.05;
+  lid.position.y = 0.108;
+  label.position.set(0, 0.052, 0.053);
+  g.add(tub, band, lid, label);
   return g;
 }
 
 const BUILDERS = {
-  'desserts-lactes': (c) => yogurtCup(c),
-  'produits-laitiers': (c) => milkCarton(c),
-  boissons: (c) => sodaCan(c),
-  glaces: (c) => iceCreamTub(c),
-  confiseries: (c) => candy(c),
-  chocolats: (c) => chocolateBar(c),
-  biscuits: (c) => biscuitPack(c),
-  viennoiseries: (c) => croissant(c),
-  cereales: (c, cat) => cerealBox(c, cat.name, menuColor(CATEGORIES.indexOf(cat))),
-  snacks: (c) => chipsBag(c),
-  sauces: (c) => sauceBottle(c),
-  plats: (c) => mealTray(c),
-  vegetal: (c) => plantPack(c),
-  nutrition: (c) => proteinTub(c),
+  'desserts-lactes': yogurtCup,
+  'produits-laitiers': milkCarton,
+  boissons: sodaCan,
+  glaces: iceCreamTub,
+  confiseries: candy,
+  chocolats: chocolateBar,
+  biscuits: biscuitPack,
+  viennoiseries: croissant,
+  cereales: cerealBox,
+  snacks: chipsBag,
+  sauces: sauceBottle,
+  plats: mealTray,
+  vegetal: plantPack,
+  nutrition: proteinTub,
 };
 
 const templates = new Map();
 
 function templateFor(category, variant) {
   const colors = VARIANTS[category.id];
+  const names = NAMES[category.id];
   const colorIndex = variant % colors.length;
   const key = `${category.id}:${colorIndex}`;
   let template = templates.get(key);
   if (!template) {
-    template = BUILDERS[category.id](colors[colorIndex], category);
+    template = BUILDERS[category.id](colors[colorIndex], names[colorIndex]);
     template.userData.category = category;
     templates.set(key, template);
   }
   return template;
 }
 
-const FEATURE_SLOT = 4;
+const FACINGS = 4;
+const PRODUCT_SCALE = 1.85;
+const FEATURE_SLOT = 1;
 let glowMap;
 
 function glowTexture() {
@@ -541,14 +841,16 @@ function markFeatured(item) {
   halo.userData.halo = true;
   item.add(halo);
 
-  const shine = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: glowTexture(),
-    color: 0xfff1cc,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  }));
+  const shine = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: glowTexture(),
+      color: 0xfff1cc,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
   shine.position.y = 0.045;
   shine.scale.set(0.08, 0.1, 1);
   shine.userData.shine = true;
@@ -569,14 +871,13 @@ function markFeatured(item) {
 
 export function fillShelf(bucket, category, y, width, depth, feature = false) {
   const featured = [];
-  const facings = 10;
-  for (let i = 0; i < facings; i += 1) {
+  for (let i = 0; i < FACINGS; i += 1) {
     const spotlight = feature && i === FEATURE_SLOT;
     const item = templateFor(category, spotlight ? 0 : i).clone(true);
-    const gap = (width - 0.36) / (facings - 1);
-    item.position.set(-width / 2 + 0.18 + i * gap, y, depth / 2 - 0.12);
-    item.rotation.y = (i % 2 === 0 ? -0.04 : 0.04);
-    item.scale.setScalar(1.55);
+    const gap = (width - 0.42) / (FACINGS - 1);
+    item.position.set(-width / 2 + 0.21 + i * gap, y, depth / 2 - 0.14);
+    item.rotation.y = 0;
+    item.scale.setScalar(PRODUCT_SCALE);
     item.userData.category = category;
     if (spotlight) {
       markFeatured(item);

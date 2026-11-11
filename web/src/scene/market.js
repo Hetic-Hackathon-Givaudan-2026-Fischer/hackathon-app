@@ -1,6 +1,19 @@
 import * as THREE from 'three';
-import { COPPER, FRAME, INK, IVORY, PAPER, TYPEFACE, menuColor } from '../brand.js';
-import { CATEGORIES, commitProducts, fillShelf, pulseSpotlights } from './products.js';
+import {
+  COPPER,
+  FRAME,
+  INK,
+  IVORY,
+  PAPER,
+  TYPEFACE,
+  menuColor,
+} from '../brand.js';
+import {
+  CATEGORIES,
+  commitProducts,
+  fillShelf,
+  pulseSpotlights,
+} from './products.js';
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(' ');
@@ -17,7 +30,9 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   }
   lines.push(line);
   const startY = y - ((lines.length - 1) * lineHeight) / 2;
-  lines.forEach((item, index) => ctx.fillText(item, x, startY + index * lineHeight));
+  lines.forEach((item, index) =>
+    ctx.fillText(item, x, startY + index * lineHeight),
+  );
 }
 
 const textureCache = new Map();
@@ -263,6 +278,9 @@ const glassMat = new THREE.MeshStandardMaterial({
   opacity: 0.2,
   depthWrite: false,
 });
+const windowGlass = glassMat.clone();
+windowGlass.side = THREE.DoubleSide;
+windowGlass.opacity = 0.28;
 const ledWarm = new THREE.MeshStandardMaterial({
   color: 0xfaf6ee,
   emissive: 0xf0e2cc,
@@ -274,20 +292,33 @@ const ledCold = new THREE.MeshStandardMaterial({
   emissiveIntensity: 0.55,
 });
 
-const STORE = { minX: -13, maxX: 13, minZ: -18, maxZ: 11, wall: 0.28, height: 6.35 };
+const STORE = {
+  minX: -6.5,
+  maxX: 6.82,
+  minZ: -18,
+  maxZ: 11,
+  wall: 0.28,
+  height: 6.35,
+};
 const FACADE_SIGN = { width: 8.1, height: 1.72, y: 4.38 };
 const PLAZA = 3.6;
 const GONDOLA_LEN = 2.95;
+const GONDOLA_DEPTH = 0.76;
 const RUN_PITCH = 3.08;
 const RUN_COUNT = 6;
 const CROSS_INDEX = 2;
 const WALL_GAPS = [1, 4];
+const SIDE_WINDOWS = {
+  sill: 3.12,
+  head: 5.5,
+  z0: -15.15,
+  z1: 3.95,
+  count: 5,
+  width: 2.5,
+};
 const NORTH_TIP = -14.7;
-const OPENINGS = [
-  { id: 'entree', x0: -9.8, x1: -3.2 },
-  { id: 'sortie', x0: 2.8, x1: 12.2 },
-];
-const WELCOME_BOARD = { x: -10, z: 7.15, yaw: Math.PI / 4 };
+const OPENINGS = [{ id: 'entree', x0: -3.24, x1: 3.56 }];
+const WELCOME_BOARD = { x: -4.96, z: 7.15, yaw: Math.PI / 4 };
 const SHORT_NAME = {
   confiseries: 'Confiseries',
   chocolats: 'Chocolats',
@@ -303,10 +334,10 @@ const SHORT_NAME = {
 
 export function coversMarket(x, z, pad = 0) {
   return (
-    x > STORE.minX - pad
-    && x < STORE.maxX + pad
-    && z > STORE.minZ - pad
-    && z < STORE.maxZ + PLAZA + pad
+    x > STORE.minX - pad &&
+    x < STORE.maxX + pad &&
+    z > STORE.minZ - pad &&
+    z < STORE.maxZ + PLAZA + pad
   );
 }
 
@@ -326,48 +357,69 @@ function categorySignMaterial(category) {
 }
 
 function layoutPlan() {
-  const byId = Object.fromEntries(CATEGORIES.map((category) => [category.id, category]));
+  const byId = Object.fromEntries(
+    CATEGORIES.map((category) => [category.id, category]),
+  );
   const ids = [
-    'confiseries', 'chocolats',
-    'biscuits', 'biscuits',
-    'viennoiseries', 'cereales',
-    'snacks', 'snacks',
-    'sauces', 'plats',
-    'vegetal', 'nutrition',
+    'confiseries',
+    'chocolats',
+    'snacks',
+    'snacks',
+    'sauces',
+    'plats',
   ];
   const facing = 3.36;
   const back = 0.86;
-  let x = STORE.minX + 0.51;
+  const wallInset = 0.51;
+  let x = STORE.minX + wallInset;
   let rot = Math.PI / 2;
   const lines = [{ x, rot, category: byId[ids[0]] }];
-  [facing, back, facing, back, facing, back, facing, back, facing, back, facing].forEach((step, index) => {
+  [facing, back, facing, back].forEach((step, index) => {
     x += step;
     rot = -rot;
     lines.push({ x, rot, category: byId[ids[index + 1]] });
+  });
+  rot = -rot;
+  lines.push({
+    x: STORE.maxX - (GONDOLA_DEPTH / 2 + 0.02),
+    rot,
+    category: byId[ids[lines.length]],
   });
   const aisles = [];
   for (let i = 0; i < lines.length; i += 2) {
     const left = lines[i].category;
     const right = lines[i + 1].category;
-    const label = left.id === right.id
-      ? SHORT_NAME[left.id]
-      : `${SHORT_NAME[left.id]}  ·  ${SHORT_NAME[right.id]}`;
+    const label =
+      left.id === right.id
+        ? SHORT_NAME[left.id]
+        : `${SHORT_NAME[left.id]}  ·  ${SHORT_NAME[right.id]}`;
     aisles.push({ x: (lines[i].x + lines[i + 1].x) / 2, label });
   }
-  const runZ = Array.from({ length: RUN_COUNT }, (_, index) => NORTH_TIP + GONDOLA_LEN / 2 + index * RUN_PITCH);
+  const runZ = Array.from(
+    { length: RUN_COUNT },
+    (_, index) => NORTH_TIP + GONDOLA_LEN / 2 + index * RUN_PITCH,
+  );
   const crossIndex = CROSS_INDEX;
   const wallGaps = WALL_GAPS;
   const fridgeIds = [
-    'desserts-lactes', 'desserts-lactes',
-    'produits-laitiers', 'produits-laitiers',
-    'boissons', 'boissons',
-    'glaces', 'glaces',
+    'desserts-lactes',
+    'produits-laitiers',
+    'boissons',
+    'glaces',
   ];
   const fridges = fridgeIds.map((id, index) => ({
     category: byId[id],
     x: STORE.minX + 1.825 + index * 3.17,
   }));
-  return { lines, aisles, runZ, fridges, fridgeZ: -17.52, crossIndex, wallGaps };
+  return {
+    lines,
+    aisles,
+    runZ,
+    fridges,
+    fridgeZ: -17.52,
+    crossIndex,
+    wallGaps,
+  };
 }
 
 function bayPresent(lineIndex, index, plan) {
@@ -384,13 +436,40 @@ export function createMarket(scene) {
   const colliders = [];
   const peg = linenTexture();
 
-  const metal = new THREE.MeshStandardMaterial({ color: 0x2a3338, roughness: 0.46, metalness: 0.22 });
-  const metalDark = new THREE.MeshStandardMaterial({ color: 0x0b1215, roughness: 0.58, metalness: 0.18 });
-  const whiteShelf = new THREE.MeshStandardMaterial({ color: 0xfaf9f6, roughness: 0.42, metalness: 0.04 });
-  const mauve = new THREE.MeshStandardMaterial({ color: 0x78608d, roughness: 0.42, metalness: 0.2 });
-  const bumper = new THREE.MeshStandardMaterial({ color: 0x8c5a32, roughness: 0.38, metalness: 0.55 });
-  const pegMat = new THREE.MeshStandardMaterial({ map: peg, roughness: 0.86, metalness: 0.02 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: 0xfaf9f6, roughness: 0.92 });
+  const metal = new THREE.MeshStandardMaterial({
+    color: 0x2a3338,
+    roughness: 0.46,
+    metalness: 0.22,
+  });
+  const metalDark = new THREE.MeshStandardMaterial({
+    color: 0x0b1215,
+    roughness: 0.58,
+    metalness: 0.18,
+  });
+  const whiteShelf = new THREE.MeshStandardMaterial({
+    color: 0xfaf9f6,
+    roughness: 0.42,
+    metalness: 0.04,
+  });
+  const mauve = new THREE.MeshStandardMaterial({
+    color: 0x78608d,
+    roughness: 0.42,
+    metalness: 0.2,
+  });
+  const bumper = new THREE.MeshStandardMaterial({
+    color: 0x8c5a32,
+    roughness: 0.38,
+    metalness: 0.55,
+  });
+  const pegMat = new THREE.MeshStandardMaterial({
+    map: peg,
+    roughness: 0.86,
+    metalness: 0.02,
+  });
+  const wallMat = new THREE.MeshStandardMaterial({
+    color: 0xfaf9f6,
+    roughness: 0.92,
+  });
   const gondolaCache = new Map();
   const fridgeCache = new Map();
 
@@ -398,10 +477,32 @@ export function createMarket(scene) {
   const spotlights = [];
   addShell(group, colliders, wallMat, metalDark, mauve, doors);
   addCeiling(group, plan);
-  addColdWall(group, colliders, productMeshes, spotlights, plan, metalDark, bumper, whiteShelf, fridgeCache);
-  addAisles(group, colliders, productMeshes, spotlights, plan, metal, whiteShelf, metalDark, pegMat, gondolaCache);
+  addColdWall(
+    group,
+    colliders,
+    productMeshes,
+    spotlights,
+    plan,
+    metalDark,
+    bumper,
+    whiteShelf,
+    fridgeCache,
+  );
+  addAisles(
+    group,
+    colliders,
+    productMeshes,
+    spotlights,
+    plan,
+    metal,
+    whiteShelf,
+    metalDark,
+    pegMat,
+    gondolaCache,
+  );
   addBlades(group, plan, metalDark);
   addMural(group, plan);
+  addSlogan(group);
   addWelcomeBoard(group, colliders, plan, metalDark);
 
   scene.add(group);
@@ -414,7 +515,17 @@ export function createMarket(scene) {
   };
 }
 
-function placeBay(group, colliders, category, bay, x, z, rotation, fridge, withSign) {
+function placeBay(
+  group,
+  colliders,
+  category,
+  bay,
+  x,
+  z,
+  rotation,
+  fridge,
+  withSign,
+) {
   bay.position.set(x, 0.1, z);
   bay.rotation.y = rotation;
   if (withSign) {
@@ -424,11 +535,26 @@ function placeBay(group, colliders, category, bay, x, z, rotation, fridge, withS
   }
   group.add(bay);
   if (fridge) {
-    colliders.push({ minX: x - 1.52, maxX: x + 1.52, minZ: z - 0.45, maxZ: z + 0.47 });
+    colliders.push({
+      minX: x - 1.52,
+      maxX: x + 1.52,
+      minZ: z - 0.45,
+      maxZ: z + 0.47,
+    });
   } else if (Math.abs(rotation) < 0.2) {
-    colliders.push({ minX: x - 1.52, maxX: x + 1.52, minZ: z - 0.45, maxZ: z + 0.45 });
+    colliders.push({
+      minX: x - 1.52,
+      maxX: x + 1.52,
+      minZ: z - 0.45,
+      maxZ: z + 0.45,
+    });
   } else {
-    colliders.push({ minX: x - 0.45, maxX: x + 0.45, minZ: z - 1.52, maxZ: z + 1.52 });
+    colliders.push({
+      minX: x - 0.45,
+      maxX: x + 0.45,
+      minZ: z - 1.52,
+      maxZ: z + 1.52,
+    });
   }
 }
 
@@ -442,7 +568,8 @@ function stockedBay(cache, key, build, productMeshes, spotlights) {
   bay.traverse((child) => {
     if (child.userData.spotlight) {
       child.traverse((node) => {
-        if ((node.isMesh || node.isSprite) && node.material) node.material = node.material.clone();
+        if ((node.isMesh || node.isSprite) && node.material)
+          node.material = node.material.clone();
       });
       child.userData.base = child.position.clone();
       child.userData.baseRotY = child.rotation.y;
@@ -458,42 +585,105 @@ function stockedBay(cache, key, build, productMeshes, spotlights) {
   return bay;
 }
 
-function addAisles(group, colliders, productMeshes, spotlights, plan, metal, whiteShelf, metalDark, pegMat, cache) {
+function addAisles(
+  group,
+  colliders,
+  productMeshes,
+  spotlights,
+  plan,
+  metal,
+  whiteShelf,
+  metalDark,
+  pegMat,
+  cache,
+) {
   plan.lines.forEach((line, lineIndex) => {
-    const sides = line.rot > 0 ? { north: 1, south: -1 } : { north: -1, south: 1 };
+    const sides =
+      line.rot > 0 ? { north: 1, south: -1 } : { north: -1, south: 1 };
     plan.runZ.forEach((z, index) => {
       if (!bayPresent(lineIndex, index, plan)) return;
       const openNorth = index === 0 || !bayPresent(lineIndex, index - 1, plan);
-      const openSouth = index === plan.runZ.length - 1 || !bayPresent(lineIndex, index + 1, plan);
+      const openSouth =
+        index === plan.runZ.length - 1 ||
+        !bayPresent(lineIndex, index + 1, plan);
       const capNorth = openNorth ? sides.north : 0;
       const capSouth = openSouth ? sides.south : 0;
       const hero = index === plan.runZ.length - 1;
       const bay = stockedBay(
         cache,
         `${line.category.id}:${capNorth}:${capSouth}:${hero ? 1 : 0}`,
-        () => createGondola(line.category, metal, whiteShelf, metalDark, pegMat, [], capNorth, capSouth, hero),
+        () =>
+          createGondola(
+            line.category,
+            metal,
+            whiteShelf,
+            metalDark,
+            pegMat,
+            [],
+            capNorth,
+            capSouth,
+            hero,
+          ),
         productMeshes,
         spotlights,
       );
-      placeBay(group, colliders, line.category, bay, line.x, z, line.rot, false, false);
+      placeBay(
+        group,
+        colliders,
+        line.category,
+        bay,
+        line.x,
+        z,
+        line.rot,
+        false,
+        false,
+      );
     });
   });
 }
 
-function addColdWall(group, colliders, productMeshes, spotlights, plan, metalDark, bumper, whiteShelf, cache) {
+function addColdWall(
+  group,
+  colliders,
+  productMeshes,
+  spotlights,
+  plan,
+  metalDark,
+  bumper,
+  whiteShelf,
+  cache,
+) {
   plan.fridges.forEach((fridge, index) => {
     const hero = index % 2 === 0;
     const bay = stockedBay(
       cache,
       `${fridge.category.id}:${hero ? 1 : 0}`,
-      () => createFridge(fridge.category, metalDark, bumper, whiteShelf, [], hero),
+      () =>
+        createFridge(fridge.category, metalDark, bumper, whiteShelf, [], hero),
       productMeshes,
       spotlights,
     );
-    placeBay(group, colliders, fridge.category, bay, fridge.x, plan.fridgeZ, 0, true, index % 2 === 0);
+    placeBay(
+      group,
+      colliders,
+      fridge.category,
+      bay,
+      fridge.x,
+      plan.fridgeZ,
+      0,
+      true,
+      true,
+    );
     if (index === plan.fridges.length - 1) return;
-    const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.14, 0.16), metalDark);
-    mullion.position.set((fridge.x + plan.fridges[index + 1].x) / 2, 1.17, plan.fridgeZ);
+    const mullion = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 2.14, 0.16),
+      metalDark,
+    );
+    mullion.position.set(
+      (fridge.x + plan.fridges[index + 1].x) / 2,
+      1.17,
+      plan.fridgeZ,
+    );
     group.add(mullion);
   });
 }
@@ -511,7 +701,10 @@ function addBlade(group, x, z, index, label, metalDark, rotY) {
   plate.position.set(x, y, z);
   plate.rotation.y = rotY;
   const rodLen = STORE.height - 0.12 - (y + 0.26);
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, rodLen, 6), metalDark);
+  const rod = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.01, 0.01, rodLen, 6),
+    metalDark,
+  );
   rod.position.set(x, y + 0.26 + rodLen / 2, z);
   group.add(plate, rod);
 }
@@ -521,7 +714,16 @@ function addBlades(group, plan, metalDark) {
   plan.aisles.forEach((aisle, index) => {
     addBlade(group, aisle.x, southZ, index, aisle.label, metalDark, 0);
   });
-  addBlade(group, 0, plan.runZ[plan.crossIndex], null, 'Allée centrale', metalDark, Math.PI / 2);
+  const midX = (STORE.minX + STORE.maxX) / 2;
+  addBlade(
+    group,
+    midX,
+    plan.runZ[plan.crossIndex],
+    null,
+    'Allée centrale',
+    metalDark,
+    Math.PI / 2,
+  );
 }
 
 function addShell(group, colliders, wallMat, metalDark, accent, doors) {
@@ -549,42 +751,163 @@ function addShell(group, colliders, wallMat, metalDark, accent, doors) {
 
   const apronDepth = PLAZA - 0.35;
   const apronStart = floorZ + floorD / 2 - 0.05;
-  const apron = new THREE.Mesh(new THREE.BoxGeometry(width + 2.4, 0.22, apronDepth), floor.material);
+  const apron = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 2.4, 0.22, apronDepth),
+    floor.material,
+  );
   apron.position.set(0, floorTop - 0.03 - 0.11, apronStart + apronDepth / 2);
   group.add(apron);
 
   const wallBottom = floorTop - 0.08;
   const rise = height - wallBottom;
   const wallCenter = wallBottom + rise / 2;
-  addWall(group, colliders, wallMat, width + wall * 2, rise, wall, 0, wallCenter, minZ - wall / 2);
-  addWall(group, colliders, wallMat, wall, rise, depth, minX - wall / 2, wallCenter, (minZ + maxZ) / 2);
-  addWall(group, colliders, wallMat, wall, rise, depth, maxX + wall / 2, wallCenter, (minZ + maxZ) / 2);
+  addWall(
+    group,
+    colliders,
+    wallMat,
+    width + wall * 2,
+    rise,
+    wall,
+    0,
+    wallCenter,
+    minZ - wall / 2,
+  );
+  addSideWall(
+    group,
+    colliders,
+    wallMat,
+    metalDark,
+    minX - wall / 2,
+    wallBottom,
+  );
+  addSideWall(
+    group,
+    colliders,
+    wallMat,
+    metalDark,
+    maxX + wall / 2,
+    wallBottom,
+  );
   addFacade(group, colliders, wallMat, metalDark, floorTop, doors);
 
   const cornice = height - 0.08;
   const inlay = height - 0.22;
-  addWall(group, null, metalDark, width + wall * 2, 0.16, wall + 0.02, 0, cornice, minZ - wall / 2);
-  addWall(group, null, metalDark, wall + 0.02, 0.16, depth, minX - wall / 2, cornice, (minZ + maxZ) / 2);
-  addWall(group, null, metalDark, wall + 0.02, 0.16, depth, maxX + wall / 2, cornice, (minZ + maxZ) / 2);
-  addWall(group, null, metalDark, width + wall * 2, 0.16, wall + 0.02, 0, cornice, maxZ + wall / 2);
-  addWall(group, null, accent, width + wall * 2, 0.02, wall + 0.05, 0, inlay, minZ - wall / 2);
-  addWall(group, null, accent, wall + 0.05, 0.02, depth, minX - wall / 2, inlay, (minZ + maxZ) / 2);
-  addWall(group, null, accent, wall + 0.05, 0.02, depth, maxX + wall / 2, inlay, (minZ + maxZ) / 2);
-  addWall(group, null, accent, width + wall * 2, 0.02, wall + 0.05, 0, inlay, maxZ + wall / 2);
+  addWall(
+    group,
+    null,
+    metalDark,
+    width + wall * 2,
+    0.16,
+    wall + 0.02,
+    0,
+    cornice,
+    minZ - wall / 2,
+  );
+  addWall(
+    group,
+    null,
+    metalDark,
+    wall + 0.02,
+    0.16,
+    depth,
+    minX - wall / 2,
+    cornice,
+    (minZ + maxZ) / 2,
+  );
+  addWall(
+    group,
+    null,
+    metalDark,
+    wall + 0.02,
+    0.16,
+    depth,
+    maxX + wall / 2,
+    cornice,
+    (minZ + maxZ) / 2,
+  );
+  addWall(
+    group,
+    null,
+    metalDark,
+    width + wall * 2,
+    0.16,
+    wall + 0.02,
+    0,
+    cornice,
+    maxZ + wall / 2,
+  );
+  addWall(
+    group,
+    null,
+    accent,
+    width + wall * 2,
+    0.02,
+    wall + 0.05,
+    0,
+    inlay,
+    minZ - wall / 2,
+  );
+  addWall(
+    group,
+    null,
+    accent,
+    wall + 0.05,
+    0.02,
+    depth,
+    minX - wall / 2,
+    inlay,
+    (minZ + maxZ) / 2,
+  );
+  addWall(
+    group,
+    null,
+    accent,
+    wall + 0.05,
+    0.02,
+    depth,
+    maxX + wall / 2,
+    inlay,
+    (minZ + maxZ) / 2,
+  );
+  addWall(
+    group,
+    null,
+    accent,
+    width + wall * 2,
+    0.02,
+    wall + 0.05,
+    0,
+    inlay,
+    maxZ + wall / 2,
+  );
 
-  const canopy = new THREE.Mesh(new THREE.BoxGeometry(width + 0.8, 0.1, 2.7), metalDark);
+  const canopy = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.8, 0.1, 2.7),
+    metalDark,
+  );
   canopy.position.set(0, height - 0.32, maxZ + 1.4);
-  const canopyLip = new THREE.Mesh(new THREE.BoxGeometry(width + 0.84, 0.028, 0.08), accent);
+  const canopyLip = new THREE.Mesh(
+    new THREE.BoxGeometry(width + 0.84, 0.028, 0.08),
+    accent,
+  );
   canopyLip.position.set(0, height - 0.39, maxZ + 2.72);
   const signZ = maxZ + wall + 0.05;
   const plate = new THREE.Mesh(
-    new THREE.BoxGeometry(FACADE_SIGN.width + 0.14, FACADE_SIGN.height + 0.14, 0.05),
+    new THREE.BoxGeometry(
+      FACADE_SIGN.width + 0.14,
+      FACADE_SIGN.height + 0.14,
+      0.05,
+    ),
     metalDark,
   );
   plate.position.set(0, FACADE_SIGN.y, signZ - 0.035);
   const face = new THREE.Mesh(
     new THREE.PlaneGeometry(FACADE_SIGN.width, FACADE_SIGN.height),
-    new THREE.MeshStandardMaterial({ map: storeSign(), roughness: 0.62, metalness: 0.02 }),
+    new THREE.MeshStandardMaterial({
+      map: storeSign(),
+      roughness: 0.62,
+      metalness: 0.02,
+    }),
   );
   face.position.set(0, FACADE_SIGN.y, signZ);
   group.add(canopy, canopyLip, plate, face);
@@ -604,7 +927,17 @@ function addFacade(group, colliders, wallMat, metalDark, floorTop, doors) {
   });
   if (maxX > cursor + 0.05) spans.push([cursor, maxX]);
   spans.forEach(([a, b]) => {
-    addWall(group, colliders, wallMat, b - a, rise, wall, (a + b) / 2, wallCenter, z);
+    addWall(
+      group,
+      colliders,
+      wallMat,
+      b - a,
+      rise,
+      wall,
+      (a + b) / 2,
+      wallCenter,
+      z,
+    );
   });
 
   const lintelH = height - 2.55;
@@ -621,7 +954,7 @@ function addFacade(group, colliders, wallMat, metalDark, floorTop, doors) {
     const w = opening.x1 - opening.x0;
     const cx = (opening.x0 + opening.x1) / 2;
     addWall(group, null, wallMat, w, lintelH, wall, cx, 2.55 + lintelH / 2, z);
-    const panes = opening.id === 'sortie' ? 5 : 4;
+    const panes = 8;
     const slice = w / panes;
     const leftCount = Math.floor(panes / 2);
     const leaves = [];
@@ -631,9 +964,15 @@ function addFacade(group, colliders, wallMat, metalDark, floorTop, doors) {
       const closedX = opening.x0 + (i + 0.5) * slice;
       const leaf = new THREE.Group();
       const paneZ = maxZ + 0.02 + local * 0.012;
-      const pane = new THREE.Mesh(new THREE.PlaneGeometry(slice - 0.08, 2.22), doorMat);
+      const pane = new THREE.Mesh(
+        new THREE.PlaneGeometry(slice - 0.08, 2.22),
+        doorMat,
+      );
       pane.position.set(0, 1.18, paneZ);
-      const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.045, 2.42, 0.06), metalDark);
+      const jamb = new THREE.Mesh(
+        new THREE.BoxGeometry(0.045, 2.42, 0.06),
+        metalDark,
+      );
       jamb.position.set(-slice / 2, 1.2, paneZ + 0.015);
       leaf.add(pane, jamb);
       leaf.position.x = closedX;
@@ -654,9 +993,15 @@ function addFacade(group, colliders, wallMat, metalDark, floorTop, doors) {
         block,
       });
     }
-    const endJamb = new THREE.Mesh(new THREE.BoxGeometry(0.045, 2.42, 0.06), metalDark);
+    const endJamb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.045, 2.42, 0.06),
+      metalDark,
+    );
     endJamb.position.set(opening.x1, 1.2, maxZ + 0.045);
-    const header = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 0.06), metalDark);
+    const header = new THREE.Mesh(
+      new THREE.BoxGeometry(w, 0.05, 0.06),
+      metalDark,
+    );
     header.position.set(cx, 2.48, maxZ + 0.045);
     const mat = new THREE.Mesh(
       new THREE.BoxGeometry(w - 0.6, 0.012, 1.45),
@@ -686,7 +1031,8 @@ function slideDoors(doors, position, dt) {
     const span = DOOR_FAR - DOOR_NEAR;
     const t = Math.min(1, Math.max(0, (distance - DOOR_NEAR) / span));
     const eased = t * t * (3 - 2 * t);
-    const inSlab = px > door.x0 - 0.3 && px < door.x1 + 0.3 && Math.abs(pz - door.z) < 0.7;
+    const inSlab =
+      px > door.x0 - 0.3 && px < door.x1 + 0.3 && Math.abs(pz - door.z) < 0.7;
     const goal = inSlab ? 1 : 1 - eased;
     door.open += (goal - door.open) * (1 - Math.exp(-7 * dt));
     door.leaves.forEach((item) => {
@@ -698,12 +1044,105 @@ function slideDoors(doors, position, dt) {
   });
 }
 
+function addSideWall(group, colliders, wallMat, metalDark, x, wallBottom) {
+  const { minZ, maxZ, wall, height } = STORE;
+  const { sill, head, z0, z1, count, width } = SIDE_WINDOWS;
+  const depth = maxZ - minZ;
+  const zMid = (minZ + maxZ) / 2;
+  const winH = head - sill;
+  const midY = (sill + head) / 2;
+  const bay = (z1 - z0) / count;
+
+  addWall(
+    group,
+    colliders,
+    wallMat,
+    wall,
+    sill - wallBottom,
+    depth,
+    x,
+    wallBottom + (sill - wallBottom) / 2,
+    zMid,
+  );
+  addWall(
+    group,
+    null,
+    wallMat,
+    wall,
+    height - head,
+    depth,
+    x,
+    head + (height - head) / 2,
+    zMid,
+  );
+
+  let cursor = minZ;
+  for (let i = 0; i < count; i += 1) {
+    const center = z0 + bay * (i + 0.5);
+    const a = center - width / 2;
+    addWall(
+      group,
+      null,
+      wallMat,
+      wall,
+      winH,
+      a - cursor,
+      x,
+      midY,
+      (cursor + a) / 2,
+    );
+    addHighWindow(group, metalDark, x, midY, center, width, winH);
+    cursor = center + width / 2;
+  }
+  addWall(
+    group,
+    null,
+    wallMat,
+    wall,
+    winH,
+    maxZ - cursor,
+    x,
+    midY,
+    (cursor + maxZ) / 2,
+  );
+}
+
+function addHighWindow(group, metalDark, x, y, z, w, h) {
+  const depth = STORE.wall + 0.06;
+  const bar = 0.065;
+  const win = new THREE.Group();
+  const piece = (sx, sy, sz, px, py, pz) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), metalDark);
+    mesh.position.set(px, py, pz);
+    win.add(mesh);
+  };
+  piece(depth, bar, w + bar, 0, h / 2, 0);
+  piece(depth, bar, w + bar, 0, -h / 2, 0);
+  piece(depth, h + bar, bar, 0, 0, -w / 2);
+  piece(depth, h + bar, bar, 0, 0, w / 2);
+  piece(depth * 0.62, h - bar, 0.04, 0, 0, 0);
+  piece(depth * 0.62, 0.04, w - bar, 0, 0, 0);
+  const glass = new THREE.Mesh(
+    new THREE.PlaneGeometry(w - bar, h - bar),
+    windowGlass,
+  );
+  glass.rotation.y = Math.PI / 2;
+  win.add(glass);
+  win.position.set(x, y, z);
+  group.add(win);
+}
+
 function addWall(group, colliders, material, w, h, d, x, y, z) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
   mesh.position.set(x, y, z);
   group.add(mesh);
   if (colliders && h > 1) {
-    colliders.push({ minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 });
+    colliders.push({
+      minX: x - w / 2,
+      maxX: x + w / 2,
+      minZ: z - d / 2,
+      maxZ: z + d / 2,
+    });
   }
 }
 
@@ -724,7 +1163,9 @@ function storeSign() {
   const canvas = document.createElement('canvas');
   canvas.dataset.key = key;
   canvas.height = 640;
-  canvas.width = Math.round(canvas.height * (FACADE_SIGN.width / FACADE_SIGN.height));
+  canvas.width = Math.round(
+    canvas.height * (FACADE_SIGN.width / FACADE_SIGN.height),
+  );
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = INK;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -732,8 +1173,22 @@ function storeSign() {
   const wordmark = 'G.F.T.E.';
   const subtitle = 'Givaudan Flavor Trends Experience';
   const maxText = canvas.width - Math.round(canvas.height * 0.36);
-  const wordSize = fittedSize(ctx, wordmark, 500, Math.round(canvas.height * 0.5), maxText, 80);
-  const subSize = fittedSize(ctx, subtitle, 400, Math.round(canvas.height * 0.15), maxText, 28);
+  const wordSize = fittedSize(
+    ctx,
+    wordmark,
+    500,
+    Math.round(canvas.height * 0.5),
+    maxText,
+    80,
+  );
+  const subSize = fittedSize(
+    ctx,
+    subtitle,
+    400,
+    Math.round(canvas.height * 0.15),
+    maxText,
+    28,
+  );
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
@@ -766,7 +1221,12 @@ function storeSign() {
   const inset = Math.round(canvas.height * 0.04);
   ctx.strokeStyle = 'rgba(250, 249, 246, 0.3)';
   ctx.lineWidth = Math.max(2, Math.round(canvas.height * 0.005));
-  ctx.strokeRect(inset, inset, canvas.width - inset * 2, canvas.height - inset * 2);
+  ctx.strokeRect(
+    inset,
+    inset,
+    canvas.width - inset * 2,
+    canvas.height - inset * 2,
+  );
 
   const texture = bake(canvas);
   texture.anisotropy = 8;
@@ -776,7 +1236,11 @@ function storeSign() {
 const posterPlane = new THREE.PlaneGeometry(1, 1);
 const posterLoader = new THREE.TextureLoader();
 const posterMaterials = new Map();
-const posterFrame = new THREE.MeshStandardMaterial({ color: 0x3a4146, roughness: 0.55, metalness: 0.08 });
+const posterFrame = new THREE.MeshStandardMaterial({
+  color: 0x3a4146,
+  roughness: 0.55,
+  metalness: 0.08,
+});
 const POSTER_CROP = {
   '/posters/herbs.webp': [94, 921],
   '/posters/fruits.webp': [88, 935],
@@ -838,29 +1302,107 @@ function addMural(group, plan) {
   const left = STORE.minX + 0.06;
   const right = STORE.maxX - 0.06;
   const back = STORE.minZ + 0.06;
-  const front = STORE.maxZ - 0.06;
   const faceLeft = Math.PI / 2;
   const faceRight = -Math.PI / 2;
   const faceBack = 0;
-  const faceFront = Math.PI;
-  const zGap = plan.runZ[plan.wallGaps[0]];
-  const zCross = plan.runZ[plan.crossIndex];
-  const zFar = plan.runZ[plan.wallGaps[1]];
+  const zOpen = (plan.runZ[plan.wallGaps[0]] + plan.runZ[plan.crossIndex]) / 2;
+  const entranceSouth =
+    plan.runZ[plan.runZ.length - 1] + GONDOLA_LEN / 2 + 0.45;
+  const entranceNorth = STORE.maxZ - 0.4;
+  const entranceZ = (entranceSouth + entranceNorth) / 2;
+  const entranceSpan = entranceNorth - entranceSouth;
+  const feelRatio = 1280 / 1920;
+  const feelW = entranceSpan - 0.2;
+  const feelH = feelW * feelRatio;
+  const square = Math.min(entranceSpan - 0.7, 5.05);
   const posters = [
-    { src: '/posters/herbs.webp', w: 2.7, ratio: posterRatio('/posters/herbs.webp'), x: left, y: 1.48, z: zGap, rotY: faceLeft },
-    { src: '/posters/lemons-square.webp', w: 2.2, ratio: 1, x: left, y: 1.68, z: zCross, rotY: faceLeft },
-    { src: '/posters/fruits.webp', w: 2.7, ratio: posterRatio('/posters/fruits.webp'), x: left, y: 1.48, z: zFar, rotY: faceLeft },
-    { src: '/posters/citrus.webp', w: 2.7, ratio: posterRatio('/posters/citrus.webp'), x: right, y: 1.48, z: zGap, rotY: faceRight },
-    { src: '/posters/kitchen.webp', w: 2.2, ratio: 1, x: right, y: 1.68, z: zCross, rotY: faceRight },
-    { src: '/posters/vegetables.webp', w: 2.7, ratio: posterRatio('/posters/vegetables.webp'), x: right, y: 1.48, z: zFar, rotY: faceRight },
-    { src: '/posters/oats.webp', w: 4.4, ratio: posterRatio('/posters/oats.webp', 396 / 1024), x: left, y: 4.55, z: plan.runZ[0], rotY: faceLeft },
-    { src: '/posters/rosemary.webp', w: 3.15, ratio: posterRatio('/posters/rosemary.webp'), x: right, y: 4.55, z: zCross, rotY: faceRight },
-    { src: '/posters/guarana.webp', w: 5.4, ratio: posterRatio('/posters/guarana.webp'), x: 0, y: 4.45, z: back, rotY: faceBack },
-    { src: '/posters/natural-square.webp', w: 3.4, ratio: 1, x: right, y: 2.55, z: 7.4, rotY: faceRight },
-    { src: '/posters/eucalyptus.jpg', w: 3.4, ratio: 1, x: left, y: 2.7, z: 7.3, rotY: faceLeft },
-    { src: '/posters/pepper.jpg', w: 2.6, ratio: 1, x: -0.2, y: 1.85, z: front, rotY: faceFront },
+    {
+      src: '/posters/fruits.webp',
+      w: 2.7,
+      ratio: posterRatio('/posters/fruits.webp'),
+      x: left,
+      y: 1.55,
+      z: zOpen,
+      rotY: faceLeft,
+    },
+    {
+      src: '/posters/vegetables.webp',
+      w: 2.7,
+      ratio: posterRatio('/posters/vegetables.webp'),
+      x: right,
+      y: 1.55,
+      z: zOpen,
+      rotY: faceRight,
+    },
+    {
+      src: '/posters/guarana.webp',
+      w: 5.4,
+      ratio: posterRatio('/posters/guarana.webp'),
+      x: 0,
+      y: 4.45,
+      z: back,
+      rotY: faceBack,
+    },
+    {
+      src: '/posters/entrance-feel.webp',
+      w: feelW,
+      ratio: feelRatio,
+      x: left,
+      y: 0.48 + feelH / 2,
+      z: entranceZ,
+      rotY: faceLeft,
+    },
+    {
+      src: '/posters/entrance-natural.webp',
+      w: square,
+      ratio: 1,
+      x: right,
+      y: 0.48 + square / 2,
+      z: entranceZ,
+      rotY: faceRight,
+    },
   ];
   posters.forEach((spec) => addPoster(group, spec));
+}
+
+const SLOGAN = 'Human by nature';
+
+function sloganTexture() {
+  const key = 'slogan';
+  const cached = textureCache.get(key);
+  if (cached) return cached;
+  const canvas = document.createElement('canvas');
+  canvas.dataset.key = key;
+  canvas.width = 2048;
+  canvas.height = 360;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `400 214px ${TYPEFACE}`;
+  ctx.fillText(SLOGAN, canvas.width / 2, canvas.height / 2 + 10);
+  return bake(canvas);
+}
+
+function addSlogan(group) {
+  const width = 7.2;
+  const height = width * (360 / 2048);
+  const plate = new THREE.Mesh(
+    posterPlane,
+    new THREE.MeshBasicMaterial({
+      map: sloganTexture(),
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+    }),
+  );
+  plate.scale.set(width, height, 1);
+  plate.position.set((STORE.minX + STORE.maxX) / 2, 4.4, STORE.maxZ - 0.04);
+  plate.rotation.y = Math.PI;
+  group.add(plate);
 }
 
 function leftLines(ctx, text, x, y, maxWidth, lineHeight) {
@@ -960,7 +1502,8 @@ function initiativeTexture(plan) {
   ctx.font = `500 16px ${TYPEFACE}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Allée centrale', X(0), Z(plan.runZ[plan.crossIndex]));
+  const midX = (STORE.minX + STORE.maxX) / 2;
+  ctx.fillText('Allée centrale', X(midX), Z(plan.runZ[plan.crossIndex]));
 
   ctx.strokeStyle = INK;
   ctx.lineWidth = 4;
@@ -989,7 +1532,7 @@ function initiativeTexture(plan) {
   ctx.fillText('Vous êtes ici', hereX, hereZ - 14);
   ctx.textBaseline = 'top';
   ctx.fillStyle = PAPER;
-  ctx.fillText('Frais', X(0), oy + 10);
+  ctx.fillText('Frais', X((STORE.minX + STORE.maxX) / 2), oy + 10);
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
@@ -1011,15 +1554,32 @@ function addWelcomeBoard(group, colliders, plan, metalDark) {
   const lift = half * Math.cos(angle);
   const { x, z, yaw } = WELCOME_BOARD;
   const y = 0.18 + lift;
-  const edge = new THREE.MeshStandardMaterial({ color: 0x3a4146, roughness: 0.55, metalness: 0.08 });
-  const backMat = new THREE.MeshStandardMaterial({ color: 0xf3f0e8, roughness: 0.9 });
-  const face = new THREE.MeshStandardMaterial({ map: initiativeTexture(plan), roughness: 0.62 });
+  const edge = new THREE.MeshStandardMaterial({
+    color: 0x3a4146,
+    roughness: 0.55,
+    metalness: 0.08,
+  });
+  const backMat = new THREE.MeshStandardMaterial({
+    color: 0xf3f0e8,
+    roughness: 0.9,
+  });
+  const face = new THREE.MeshStandardMaterial({
+    map: initiativeTexture(plan),
+    roughness: 0.62,
+  });
   const stand = new THREE.Group();
-  const board = new THREE.Mesh(
-    new THREE.BoxGeometry(width, length, 0.04),
-    [edge, edge, edge, edge, edge, backMat],
+  const board = new THREE.Mesh(new THREE.BoxGeometry(width, length, 0.04), [
+    edge,
+    edge,
+    edge,
+    edge,
+    edge,
+    backMat,
+  ]);
+  const sheet = new THREE.Mesh(
+    new THREE.PlaneGeometry(width - 0.08, length - 0.08),
+    face,
   );
-  const sheet = new THREE.Mesh(new THREE.PlaneGeometry(width - 0.08, length - 0.08), face);
   sheet.position.z = 0.024;
   board.add(sheet);
   board.position.set(0, y, 0);
@@ -1033,7 +1593,10 @@ function addWelcomeBoard(group, colliders, plan, metalDark) {
   const topZ = -depth;
   const topY = y + lift;
   [-1, 1].forEach((side) => {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, topY - 0.12, 0.05), metalDark);
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, topY - 0.12, 0.05),
+      metalDark,
+    );
     post.position.set(side * (width / 2 - 0.22), (topY + 0.12) / 2, topZ);
     stand.add(post);
   });
@@ -1058,7 +1621,14 @@ function addFluorescent(group, x, y, z, length, housing, glow, alongX) {
   const w = alongX ? length : 0.22;
   const d = alongX ? 0.22 : length;
   const shell = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, d), housing);
-  const slot = new THREE.Mesh(new THREE.BoxGeometry(Math.max(w * 0.9, 0.08), 0.018, Math.max(d * 0.62, 0.08)), glow);
+  const slot = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      Math.max(w * 0.9, 0.08),
+      0.018,
+      Math.max(d * 0.62, 0.08),
+    ),
+    glow,
+  );
   shell.position.set(x, y, z);
   slot.position.set(x, y - 0.03, z);
   group.add(shell, slot);
@@ -1072,7 +1642,11 @@ function addCeiling(group, plan) {
   );
   slab.position.set(0, height + 0.06, (minZ + maxZ) / 2);
   group.add(slab);
-  const housing = new THREE.MeshStandardMaterial({ color: 0x0b1215, roughness: 0.6, metalness: 0.15 });
+  const housing = new THREE.MeshStandardMaterial({
+    color: 0x0b1215,
+    roughness: 0.6,
+    metalness: 0.15,
+  });
   const glow = new THREE.MeshStandardMaterial({
     color: 0xfaf6ee,
     emissive: 0xf3e6d0,
@@ -1081,18 +1655,39 @@ function addCeiling(group, plan) {
   const y = height - 0.4;
   plan.aisles.forEach((aisle) => {
     for (let i = 0; i < 5; i += 1) {
-      addFluorescent(group, aisle.x, y, -12.15 + i * 3.55, 3.15, housing, glow, false);
+      addFluorescent(
+        group,
+        aisle.x,
+        y,
+        -12.15 + i * 3.55,
+        3.15,
+        housing,
+        glow,
+        false,
+      );
     }
   });
-  for (let i = 0; i < 6; i += 1) {
-    addFluorescent(group, -10.5 + i * 4.2, y, plan.runZ[plan.crossIndex], 3.4, housing, glow, true);
-  }
-  for (let i = 0; i < 6; i += 1) {
-    const x = -10.5 + i * 4.2;
+  const span = STORE.maxX - STORE.minX;
+  const across = [-0.36, 0, 0.36].map(
+    (t) => (STORE.minX + STORE.maxX) / 2 + t * span,
+  );
+  across.forEach((x) => {
+    addFluorescent(
+      group,
+      x,
+      y,
+      plan.runZ[plan.crossIndex],
+      3.4,
+      housing,
+      glow,
+      true,
+    );
+  });
+  across.forEach((x) => {
     addFluorescent(group, x, y, -16.2, 2.5, housing, glow, true);
     addFluorescent(group, x, y, 5.35, 2.5, housing, glow, true);
     addFluorescent(group, x, y, 8.85, 2.3, housing, glow, true);
-  }
+  });
 }
 
 const endCapMaterials = new Map();
@@ -1115,16 +1710,30 @@ const accentMaterials = new Map();
 function accentMaterial(hex) {
   let material = accentMaterials.get(hex);
   if (!material) {
-    material = new THREE.MeshStandardMaterial({ color: hex, roughness: 0.46, metalness: 0.16 });
+    material = new THREE.MeshStandardMaterial({
+      color: hex,
+      roughness: 0.46,
+      metalness: 0.16,
+    });
     accentMaterials.set(hex, material);
   }
   return material;
 }
 
-function createGondola(category, metal, whiteShelf, metalDark, pegMat, productMeshes, capNorth, capSouth, feature) {
+function createGondola(
+  category,
+  metal,
+  whiteShelf,
+  metalDark,
+  pegMat,
+  productMeshes,
+  capNorth,
+  capSouth,
+  feature,
+) {
   const bay = new THREE.Group();
-  const w = 2.95;
-  const d = 0.76;
+  const w = GONDOLA_LEN;
+  const d = GONDOLA_DEPTH;
   const h = 2.08;
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, h, 0.04), pegMat);
@@ -1138,7 +1747,10 @@ function createGondola(category, metal, whiteShelf, metalDark, pegMat, productMe
     accentMaterial(menuColor(CATEGORIES.indexOf(category))),
   );
   stripe.position.set(0, 0.17, d / 2);
-  const top = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, 0.04, d - 0.05), metal);
+  const top = new THREE.Mesh(
+    new THREE.BoxGeometry(w - 0.08, 0.04, d - 0.05),
+    metal,
+  );
   top.position.set(0, h, 0.015);
   bay.add(back, left, right, stripe, top);
   const capIndex = CATEGORIES.indexOf(category);
@@ -1148,14 +1760,30 @@ function createGondola(category, metal, whiteShelf, metalDark, pegMat, productMe
   const shelfYs = [0.26, 0.68, 1.1, 1.52, 1.9];
   const stock = [];
   shelfYs.forEach((y) => {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, 0.028, d - 0.06), whiteShelf);
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.08, 0.028, d - 0.06),
+      whiteShelf,
+    );
     board.position.set(0, y, 0.01);
-    const lip = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.022, 0.028), metal);
+    const lip = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.1, 0.022, 0.028),
+      metal,
+    );
     lip.position.set(0, y - 0.018, d / 2 - 0.03);
-    const led = new THREE.Mesh(new THREE.BoxGeometry(w - 0.22, 0.008, 0.018), ledWarm);
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.22, 0.008, 0.018),
+      ledWarm,
+    );
     led.position.set(0, y + 0.02, -0.05);
     bay.add(board, lip, led);
-    const heroes = fillShelf(stock, category, y + 0.014, w - 0.12, d, feature && shelfYs.indexOf(y) === 3);
+    const heroes = fillShelf(
+      stock,
+      category,
+      y + 0.014,
+      w - 0.12,
+      d,
+      feature && shelfYs.indexOf(y) === 3,
+    );
     heroes.forEach((item) => bay.add(item));
   });
   commitProducts(bay, category, stock, productMeshes);
@@ -1163,7 +1791,14 @@ function createGondola(category, metal, whiteShelf, metalDark, pegMat, productMe
   return bay;
 }
 
-function createFridge(category, metalDark, bumper, whiteShelf, productMeshes, feature) {
+function createFridge(
+  category,
+  metalDark,
+  bumper,
+  whiteShelf,
+  productMeshes,
+  feature,
+) {
   const bay = new THREE.Group();
   const w = 2.95;
   const d = 0.8;
@@ -1171,13 +1806,22 @@ function createFridge(category, metalDark, bumper, whiteShelf, productMeshes, fe
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), metalDark);
   back.position.set(0, h / 2, -d / 2);
-  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.07, h, d - 0.06), metalDark);
+  const sideL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.07, h, d - 0.06),
+    metalDark,
+  );
   const sideR = sideL.clone();
   sideL.position.set(-w / 2 + 0.035, h / 2, 0.01);
   sideR.position.set(w / 2 - 0.035, h / 2, 0.01);
-  const cabinetTop = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.08, d - 0.06), metalDark);
+  const cabinetTop = new THREE.Mesh(
+    new THREE.BoxGeometry(w - 0.04, 0.08, d - 0.06),
+    metalDark,
+  );
   cabinetTop.position.set(0, h - 0.04, 0.01);
-  const base = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.12, d - 0.14), metalDark);
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(w - 0.2, 0.12, d - 0.14),
+    metalDark,
+  );
   base.position.set(0, 0.09, 0.02);
   const interior = new THREE.Mesh(
     new THREE.BoxGeometry(w - 0.16, h - 0.3, 0.02),
@@ -1190,24 +1834,42 @@ function createFridge(category, metalDark, bumper, whiteShelf, productMeshes, fe
   const doorH = h - 0.36;
   for (let i = 0; i < 2; i += 1) {
     const cx = i === 0 ? -doorW / 2 - 0.02 : doorW / 2 + 0.02;
-    const door = new THREE.Mesh(new THREE.PlaneGeometry(doorW - 0.06, doorH - 0.06), glassMat);
+    const door = new THREE.Mesh(
+      new THREE.PlaneGeometry(doorW - 0.06, doorH - 0.06),
+      glassMat,
+    );
     door.position.set(cx, h / 2 + 0.02, d / 2 + 0.02);
-    const frameV1 = new THREE.Mesh(new THREE.BoxGeometry(0.035, doorH, 0.04), metalDark);
+    const frameV1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.035, doorH, 0.04),
+      metalDark,
+    );
     const frameV2 = frameV1.clone();
     frameV1.position.set(cx - doorW / 2 + 0.02, h / 2, d / 2 + 0.02);
     frameV2.position.set(cx + doorW / 2 - 0.02, h / 2, d / 2 + 0.02);
-    const frameH1 = new THREE.Mesh(new THREE.BoxGeometry(doorW, 0.035, 0.04), metalDark);
+    const frameH1 = new THREE.Mesh(
+      new THREE.BoxGeometry(doorW, 0.035, 0.04),
+      metalDark,
+    );
     const frameH2 = frameH1.clone();
     frameH1.position.set(cx, h / 2 + doorH / 2, d / 2 + 0.02);
     frameH2.position.set(cx, h / 2 - doorH / 2, d / 2 + 0.02);
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8), bumper);
+    const handle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.012, 0.012, 0.5, 8),
+      bumper,
+    );
     handle.position.set(cx + (i === 0 ? 0.52 : -0.52), h / 2, d / 2 + 0.05);
     bay.add(door, frameV1, frameV2, frameH1, frameH2, handle);
   }
 
-  const mid = new THREE.Mesh(new THREE.BoxGeometry(0.04, h - 0.28, 0.05), metalDark);
+  const mid = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, h - 0.28, 0.05),
+    metalDark,
+  );
   mid.position.set(0, h / 2, d / 2 + 0.02);
-  const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, w - 0.15, 12), bumper);
+  const rail = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.045, w - 0.15, 12),
+    bumper,
+  );
   rail.rotation.z = Math.PI / 2;
   rail.position.set(0, 0.3, d / 2 + 0.07);
   bay.add(mid, rail);
@@ -1215,16 +1877,28 @@ function createFridge(category, metalDark, bumper, whiteShelf, productMeshes, fe
   const shelfYs = [0.34, 0.78, 1.22, 1.66];
   const stock = [];
   shelfYs.forEach((y) => {
-    const board = new THREE.Mesh(new THREE.BoxGeometry(w - 0.22, 0.02, d - 0.18), whiteShelf);
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.22, 0.02, d - 0.18),
+      whiteShelf,
+    );
     board.position.set(0, y, 0);
-    const led = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.006, 0.016), ledCold);
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.3, 0.006, 0.016),
+      ledCold,
+    );
     led.position.set(0, y + 0.04, -d / 2 + 0.14);
     bay.add(board, led);
-    const heroes = fillShelf(stock, category, y + 0.012, w - 0.3, d - 0.1, feature && shelfYs.indexOf(y) === 2);
+    const heroes = fillShelf(
+      stock,
+      category,
+      y + 0.012,
+      w - 0.3,
+      d - 0.1,
+      feature && shelfYs.indexOf(y) === 2,
+    );
     heroes.forEach((item) => bay.add(item));
   });
   commitProducts(bay, category, stock, productMeshes);
 
   return bay;
 }
-

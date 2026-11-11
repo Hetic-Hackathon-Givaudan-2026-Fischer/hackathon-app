@@ -10,6 +10,17 @@ export default defineConfig(
   globalIgnores(['**/dist/', 'db/data/', '**/.venv/']),
   eslint.configs.recommended,
   tseslint.configs.recommended,
+  {
+    files: ['web/**/*.js'],
+    languageOptions: {
+      globals: {
+        document: 'readonly',
+        window: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+      },
+    },
+  },
   // Désactive les règles de forme : c'est le travail de Prettier
   prettier,
 );

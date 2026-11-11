@@ -6,8 +6,8 @@ const RADIUS = 0.34;
 
 export function createControls(camera, domElement, blocks) {
   const controls = new PointerLockControls(camera, domElement);
-  camera.position.set(-6.49, PLAYER_HEIGHT, 9.55);
-  camera.lookAt(-6.49, 1.15, -2);
+  camera.position.set(0.16, PLAYER_HEIGHT, 9.55);
+  camera.lookAt(0.16, 1.15, -2);
 
   const keys = {
     forward: false,
@@ -48,7 +48,12 @@ export function createControls(camera, domElement, blocks) {
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
       if (block.cos == null) {
-        if (x > block.minX - RADIUS && x < block.maxX + RADIUS && z > block.minZ - RADIUS && z < block.maxZ + RADIUS) {
+        if (
+          x > block.minX - RADIUS &&
+          x < block.maxX + RADIUS &&
+          z > block.minZ - RADIUS &&
+          z < block.maxZ + RADIUS
+        ) {
           return true;
         }
         continue;
@@ -58,10 +63,10 @@ export function createControls(camera, domElement, blocks) {
       const lx = dx * block.cos - dz * block.sin;
       const lz = dx * block.sin + dz * block.cos;
       if (
-        lx > block.minLX - RADIUS
-        && lx < block.maxLX + RADIUS
-        && lz > block.minLZ - RADIUS
-        && lz < block.maxLZ + RADIUS
+        lx > block.minLX - RADIUS &&
+        lx < block.maxLX + RADIUS &&
+        lz > block.minLZ - RADIUS &&
+        lz < block.maxLZ + RADIUS
       ) {
         return true;
       }
