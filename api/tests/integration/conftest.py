@@ -10,14 +10,17 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 import pytest
-from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession, create_async_engine
 
 from app.core.config import to_async_url
 
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
-# Le schéma de référence, le même que celui joué par le conteneur db
-SCHEMA = Path(__file__).resolve().parents[3] / "db" / "init" / "001-schema.sql"
+# Le schéma de référence, le même que celui joué par le conteneur db (sans le seed)
+INIT_DIR = Path(__file__).resolve().parents[3] / "db" / "init"
+SCHEMA_FILES = sorted(p for p in INIT_DIR.glob("0*.sql") if "seed" not in p.name)
+# Lus à l'import : pas de lecture de fichier bloquante dans une coroutine
+SCHEMA_SQL = [path.read_text() for path in SCHEMA_FILES]
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
@@ -29,10 +32,19 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
             item.add_marker(skip)
 
 
+async def _apply(connection: AsyncConnection, sql: str) -> None:
+    """Joue un fichier ; s'il a déjà été joué (base de dev), on l'ignore."""
+    try:
+        async with connection.begin_nested():
+            await connection.exec_driver_sql(sql)
+    except ProgrammingError as exc:
+        if "already exists" not in str(exc):
+            raise
+
+
 async def _ensure_schema(connection: AsyncConnection) -> None:
-    exists = await connection.scalar(text("SELECT to_regclass('public.questions')"))
-    if exists is None:
-        await connection.exec_driver_sql(SCHEMA.read_text())
+    for sql in SCHEMA_SQL:
+        await _apply(connection, sql)
 
 
 @pytest.fixture

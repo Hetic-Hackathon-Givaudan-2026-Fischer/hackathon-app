@@ -4,13 +4,13 @@ Consignes pour les agents IA (Claude Code, Codex…) qui travaillent sur ce dép
 
 ## Le projet
 
-Socle de hackathon : un front Vite + TypeScript (`web/`), une API FastAPI + Python 3.13 (`api/`), PostgreSQL 17 (`db/`) et une IA (Ollama en direct, ou l'API de l'équipe Data/IA), le tout lancé avec Docker Compose.
+Socle de hackathon : un front React + TypeScript + Tailwind sur Vite (`web/`), une API FastAPI + Python 3.13 (`api/`), PostgreSQL 17 (`db/`) et l'API de l'équipe Data/IA (tendances d'arômes, CSV en repli), le tout lancé avec Docker Compose.
 
 ```
 navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
                                                 │
-                                                ├──► Ollama, contrat compatible OpenAI   (mode 1, DATA_AI_URL vide)
-                                                └──► API de l'équipe Data/IA (ngrok)     (mode 2, DATA_AI_URL renseignée)
+                                                ├──► API de l'équipe Data/IA (ngrok)   (DATA_AI_URL renseignée)
+                                                └──► CSV de repli (api/app/data/)      (DATA_AI_URL vide, ou Data/IA coupée)
 ```
 
 La documentation, les ADR et les commentaires sont en **français** : garde cette langue.
@@ -41,16 +41,37 @@ Architecture en couches ([ADR 0004](docs/adr/0004-backend-fastapi.md)) :
 | `api/deps.py`           | Injection (`Depends`) : **seul** endroit qui choisit les implémentations. |
 | `services/`             | Logique métier ; ne dépend que des `Protocol` de `services/ports.py`.     |
 | `repositories/`         | Requêtes SQL (SQLAlchemy async + asyncpg).                                |
-| `clients/ai.py`         | Les deux modes d'IA derrière l'interface `AnswerProvider`.                |
+| `clients/` (tendances)  | Data/IA, CSV de repli et bascule derrière `TrendSource` (ADR 0008).       |
 | `models/` / `schemas/`  | Tables SQLAlchemy / entrées-sorties Pydantic.                             |
 | `core/config.py`, `db/` | Configuration (`pydantic-settings`, lit `api/.env`), connexion.           |
 
 - Jamais de SQL ni de logique métier dans un endpoint.
-- Tout appel à l'IA passe par `AnswerProvider` et le contrat `/chat/completions` compatible OpenAI ([ADR 0001](docs/adr/0001-client-ia.md)) : pas de SDK de fournisseur.
+- Le format des réponses Data/IA n'est connu que de `clients/data_trends.py` ; chaque réponse de données porte `origin` ([ADR 0008](docs/adr/0008-source-tendances-repli.md)).
+- Liens showroom : jeton haché, jamais dans les logs ([ADR 0010](docs/adr/0010-liens-showroom.md)).
+- `openapi.yaml` se régénère avec `uv run python -m app.scripts.export_openapi` (contrôlé en CI).
 - Une nouvelle version d'API se crée à côté (`api/v2/`), sans casser la v1.
 - Le schéma de la base est dans `db/init/*.sql` (joué au premier démarrage seulement) ; pas d'Alembic.
 - Dépendances avec `uv add` (dans `api/`) : commite `pyproject.toml` **et** `uv.lock`.
 - Pour les conventions FastAPI (`Annotated`, types de retour, routers…), suis le skill `.agents/skills/fastapi`.
+
+## Le front (`web/src/`)
+
+React + Tailwind pour l'interface, three.js impératif pour la scène ([ADR 0007](docs/adr/0007-front-react.md)) :
+
+| Dossier         | Rôle                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `components/`   | Composants React, classes Tailwind ; jamais d'import de `three`.                                              |
+| `hooks/`        | `useExperience` : monte / libère le moteur, expose son état à React.                                          |
+| `engine/`       | Moteur three.js ; entrée unique `createExperience`, libéré par `dispose`.                                     |
+| `engine/scene/` | Un dossier par élément de la scène, `index.ts` comme seule surface.                                           |
+| `api/`          | Seul accès réseau : client `openapi-fetch`, types générés ([ADR 0012](docs/adr/0012-types-front-openapi.md)). |
+| `immersive/`    | Lien rayon 3D → familles d'arômes, fiche affichée au scan.                                                    |
+| `lib/`          | Mise en forme partagée (nombres, dates, familles, origine des données).                                       |
+
+- Types partagés du moteur : `engine/types.ts` ; outils canvas : `engine/scene/shared/canvas.ts`.
+- Types de l'API : jamais écrits à la main. Après un changement de schéma Pydantic : `export_openapi`, puis `npm run gen:api` (contrôlé en CI).
+- L'app s'ouvre sur le dashboard ; la vue immersive ne s'ouvre que depuis lui. Seule autre URL : `/showroom/{jeton}` (vue client seule, testée dans `main.tsx`).
+- Jetons de la charte : `@theme` dans `index.css`, alignés sur `brand.ts`.
 
 ## Tests
 
@@ -60,7 +81,7 @@ pytest, sur trois niveaux, dans `api/tests/` :
 - `api/` : les routes, dépendances remplacées par `app.dependency_overrides` ;
 - `integration/` : les repositories sur un vrai PostgreSQL, sautés si `TEST_DATABASE_URL` n'est pas défini.
 
-L'IA est toujours simulée. Toute nouvelle logique de service s'accompagne de ses tests.
+L'API Data/IA est toujours simulée (fixtures enregistrées). Toute nouvelle logique de service s'accompagne de ses tests.
 
 ## Commandes
 
@@ -68,7 +89,7 @@ Deux terminaux à distinguer :
 
 | Où                                  | Commandes                                                   |
 | ----------------------------------- | ----------------------------------------------------------- |
-| Machine hôte                        | `./setup.sh`, `docker compose …`, `ollama …`                |
+| Machine hôte                        | `./setup.sh`, `docker compose …`                            |
 | Dev container (`node@…:/workspace`) | `npm run lint`, `npm run format`, `uv run …`, `git`, `psql` |
 
 Dans `api/` :
@@ -79,6 +100,6 @@ uv run ruff format     # formatage
 uv run pytest          # tests
 ```
 
-À la racine : `npm run lint` (ESLint), `npm run format:check` (Prettier). Le hook pre-commit (husky + lint-staged) lance ESLint, Prettier et ruff sur les fichiers indexés.
+À la racine : `npm run lint` (ESLint), `npm run format:check` (Prettier), `npm run gen:api` (types du front depuis `openapi.yaml`). Le hook pre-commit (husky + lint-staged) lance ESLint, Prettier et ruff sur les fichiers indexés.
 
 Avant de rendre la main : `ruff check`, `ruff format` et `pytest` passent dans `api/`, `npm run lint` et `npm run format:check` à la racine.
