@@ -102,10 +102,11 @@ check_ports() {
 # --- Démarrage ---------------------------------------------------------------
 
 # Pas « dev » : c'est le poste de travail des éditeurs, qui le lancent eux-mêmes.
-# db et install suivent via depends_on
+# db et install suivent via depends_on. --build : l'image de l'API est reconstruite
+# si api/Dockerfile ou uv.lock ont changé (sinon, le cache la rend instantanée)
 start_stack() {
   step "Démarrage de la stack (le premier lancement télécharge et construit les images)"
-  docker compose up -d --wait api web ||
+  docker compose up -d --build --wait api web ||
     fail "La stack n'a pas démarré" "Regarde les logs : docker compose logs install api web db"
   ok "Tous les services sont sains"
 }

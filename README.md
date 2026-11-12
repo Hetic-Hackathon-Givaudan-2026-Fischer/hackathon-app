@@ -12,8 +12,14 @@ Depuis un terminal **de ta machine** (pas du dev container) :
 ```bash
 git clone https://github.com/Hetic-Hackathon-Givaudan-2026-Fischer/hackathon-app.git
 cd hackathon-app
-./setup.sh
 ```
+
+Puis, au choix :
+
+| Option                      | Commande                    | Pour qui                                                                   |
+| --------------------------- | --------------------------- | -------------------------------------------------------------------------- |
+| **A. Script** (recommandée) | `./setup.sh`                | Premier lancement : vérifie Docker, les ports et `api/.env`, puis démarre. |
+| **B. Docker Compose seul**  | `docker compose up --build` | Tu connais Docker : démarre tout, logs dans le terminal, `Ctrl+C` arrête.  |
 
 Puis ouvre http://localhost:5173. Le premier lancement prend quelques minutes (images Docker, dépendances).
 
@@ -70,7 +76,9 @@ Toutes les données passent par notre API (`/api/v1/...`), documentée dans le S
 
 **Ni Node ni Python** ne sont nécessaires sur ta machine : tout tourne dans les conteneurs.
 
-### Méthode recommandée : `setup.sh`
+Deux façons de démarrer, au choix. Les deux construisent les images et créent `api/.env` à partir de `api/.env.example` s'il manque.
+
+### Option A (recommandée) : `setup.sh`
 
 ```bash
 ./setup.sh
@@ -85,15 +93,23 @@ Le script est **relançable sans risque** : ce qui est déjà fait est sauté. S
 | Configuration | Crée `api/.env` à partir de `api/.env.example` s'il n'existe pas.                   |
 | Données       | Indique si `DATA_AI_URL` est renseignée (sinon : CSV de repli, sans modèle).        |
 | Ports         | Vérifie que 3000, 5173 et 5433 sont libres (sauf si la stack tourne déjà).          |
-| Démarrage     | `docker compose up -d --wait api web`, puis attend que tout soit sain.              |
+| Démarrage     | `docker compose up -d --build --wait api web`, puis attend que tout soit sain.      |
 
-### Méthode manuelle : les mêmes étapes, sans vérifications
+La stack tourne en arrière-plan ; le terminal est rendu une fois tout sain.
+
+### Option B : `docker compose up --build`
 
 ```bash
-cp api/.env.example api/.env           # 1. configuration de l'API
-docker compose up -d --wait api web    # 2. démarre db, install, api, web
-docker compose ps                      # 3. api, web et db doivent être « healthy »
+docker compose up --build
 ```
+
+Aucune vérification préalable : Compose construit les images, crée `api/.env` (service `install`) et démarre **tous** les services, y compris `dev` (le poste de travail du dev container). Les logs défilent dans le terminal ; `Ctrl+C` arrête tout.
+
+| Variante                              | Commande                                      |
+| ------------------------------------- | --------------------------------------------- |
+| En arrière-plan                       | `docker compose up -d --build`                |
+| Sans `dev`, comme `setup.sh`          | `docker compose up -d --build --wait api web` |
+| Vérifier : api, web et db « healthy » | `docker compose ps`                           |
 
 ### Ce qui tourne une fois lancé
 
@@ -400,7 +416,7 @@ Commite les deux fichiers : la CI échoue s'ils ne correspondent plus au code.
 ```bash
 docker compose down
 rm -rf db/data
-./setup.sh
+./setup.sh                  # ou : docker compose up --build
 ```
 
 Les données vivent dans le dossier `db/data/`, pas dans un volume : `docker compose down -v` ne les efface **pas**.
