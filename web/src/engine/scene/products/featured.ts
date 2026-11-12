@@ -43,6 +43,7 @@ function glowTexture(): THREE.CanvasTexture {
 
 function flagged<T extends THREE.Object3D>(object: T, flag: GlowFlag): T {
   object.userData[flag] = true;
+  object.userData.ownedMaterial = true;
   return object;
 }
 
@@ -61,6 +62,7 @@ function warmMaterials(item: THREE.Object3D): void {
       material.emissiveIntensity = 0.8;
     }
     child.material = material;
+    child.userData.ownedMaterial = true;
   });
 }
 
@@ -77,6 +79,7 @@ function createHalo(): THREE.Mesh {
   );
   halo.rotation.x = -Math.PI / 2;
   halo.position.y = 0.007;
+  halo.userData.ownedGeometry = true;
   return flagged(halo, 'halo');
 }
 
@@ -102,6 +105,7 @@ function createSpark(): THREE.Mesh {
     new THREE.MeshBasicMaterial({ color: 0xffc14d, toneMapped: false }),
   );
   spark.position.y = 0.19;
+  spark.userData.ownedGeometry = true;
   return flagged(spark, 'spark');
 }
 
@@ -111,11 +115,36 @@ function createGlowLight(): THREE.PointLight {
   return light;
 }
 
-/** Met le produit en vedette (le rayon l'anime ensuite). */
+/** Haut du modèle dans son repère, avant les effets de lueur. */
+function productTop(item: THREE.Object3D): number {
+  const corner = new THREE.Vector3();
+  let top = 0;
+  item.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    if (!child.geometry.boundingBox) child.geometry.computeBoundingBox();
+    const box = child.geometry.boundingBox;
+    if (!box) return;
+    child.updateMatrix();
+    corner.set(0, box.max.y, 0).applyMatrix4(child.matrix);
+    if (corner.y > top) top = corner.y;
+  });
+  return top;
+}
+
+/** Met le produit en vedette : lueur collée au volume, le rayon l'anime ensuite. */
 export function markFeatured(item: THREE.Object3D): void {
   item.userData.spotlight = true;
   warmMaterials(item);
-  item.add(createHalo(), createShine(), createSpark(), createGlowLight());
+  const top = productTop(item);
+  const halo = createHalo();
+  halo.position.y = 0.004;
+  const shine = createShine();
+  shine.position.y = top * 0.62;
+  const spark = createSpark();
+  spark.position.y = top + 0.016;
+  const light = createGlowLight();
+  light.position.set(0, top * 0.5, 0.04);
+  item.add(halo, shine, spark, light);
 }
 
 function poseOf(item: THREE.Object3D): SpotlightPose | undefined {
@@ -146,13 +175,13 @@ function pulseHalo(halo: THREE.Object3D, pulse: number): void {
 }
 
 function pulseShine(shine: THREE.Object3D, pulse: number): void {
-  const scale = 0.9 + pulse * 0.28;
-  setOpacity(shine, 0.28 + pulse * 0.28);
-  shine.scale.set(0.075 * scale, 0.1 * scale, 1);
+  const scale = 1.05 + pulse * 0.4;
+  setOpacity(shine, 0.5 + pulse * 0.4);
+  shine.scale.set(0.11 * scale, 0.14 * scale, 1);
 }
 
 function spinSpark(spark: THREE.Object3D, { time, phase, pulse }: Beat): void {
-  spark.scale.setScalar(0.75 + pulse * 0.55);
+  spark.scale.setScalar(0.42 + pulse * 0.28);
   spark.rotation.y = time * 2.4 + phase;
   spark.rotation.z = time * 1.6;
 }
@@ -184,11 +213,11 @@ function pulseItem(item: THREE.Object3D, time: number): void {
   const { base, baseRotY, phase } = pose;
   const buzz = Math.sin(time * 46 + phase);
   const pulse = 0.5 + 0.5 * Math.sin(time * 2.7 + phase);
-  item.position.x = base.x + buzz * 0.016;
-  item.position.y = base.y + pulse * 0.022;
-  item.position.z = base.z + Math.cos(time * 38 + phase) * 0.01;
-  item.rotation.y = baseRotY + Math.sin(time * 22 + phase) * 0.07;
-  item.rotation.z = buzz * 0.08;
+  item.position.x = base.x + buzz * 0.03;
+  item.position.y = base.y + pulse * 0.04;
+  item.position.z = base.z + Math.cos(time * 38 + phase) * 0.012;
+  item.rotation.y = baseRotY + Math.sin(time * 22 + phase) * 0.14;
+  item.rotation.z = buzz * 0.16;
   const beat: Beat = { time, phase, pulse };
   item.traverse((child) => pulseChild(child, beat));
 }

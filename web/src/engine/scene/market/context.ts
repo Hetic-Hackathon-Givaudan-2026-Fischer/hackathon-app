@@ -1,11 +1,20 @@
 // Contexte de construction partagé par les modules du magasin.
 import * as THREE from 'three';
 import type { BoxCollider, Category, Collider } from '../../types';
+import type { ShelfLevel } from '../products';
 import type { Door } from './doors';
 import type { MarketMaterials } from './materials';
 import type { Plan } from './plan';
 
 export type Vec3 = readonly [number, number, number];
+
+/** Meuble posé, prêt à recevoir les arômes de sa rubrique. */
+export interface PlacedBay {
+  group: THREE.Group;
+  category: Category;
+  levels: readonly ShelfLevel[];
+  offset: number;
+}
 
 /** Ce que chaque module remplit pendant `createMarket`. */
 export interface BuildContext {
@@ -16,12 +25,16 @@ export interface BuildContext {
   materials: MarketMaterials;
   doors: Door[];
   spotlights: THREE.Object3D[];
+  bays: PlacedBay[];
+  /** Prochain index d'arôme, par rubrique, pour ne pas répéter le même facing. */
+  flavorOffsets: Map<string, number>;
+  /** Dernier assortiment posé : évite de reconstruire à l'identique. */
+  stockSignature: string | null;
 }
 
-/** Meuble en cours de montage (gondole ou frigo) et son stock. */
+/** Meuble en cours de montage (gondole ou frigo). */
 export interface BayBuild {
   bay: THREE.Group;
-  stock: THREE.Object3D[];
   category: Category;
   materials: MarketMaterials;
 }

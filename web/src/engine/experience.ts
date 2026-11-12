@@ -1,7 +1,14 @@
 // Point d'entrée du moteur 3D : assemble la scène, les contrôles, la visée et
 // la boucle de rendu. React ne voit que `createExperience` et ses événements.
 import * as THREE from 'three';
-import { categoryOf, createAim, inRange, scannable, type Aim } from './aim';
+import {
+  categoryOf,
+  createAim,
+  inRange,
+  scannable,
+  trendIdOf,
+  type Aim,
+} from './aim';
 import { createControls, type WalkControls } from './controls';
 import { createFocus, type Focus } from './focus';
 import { startLoop, type FrameFn } from './loop';
@@ -9,11 +16,24 @@ import { createMarket } from './scene/market';
 import { createNature } from './scene/nature';
 import { createGear } from './scene/scanner';
 import { createStage, HAND_LAYER, type Stage } from './stage';
-import type { Category, Gear, Market, ScanCard } from './types';
+import type {
+  Gear,
+  Market,
+  ScanCard,
+  ScannedProduct,
+  ShelfStock,
+} from './types';
 
 // Contrats exposés à l'interface : seule surface du moteur avec createExperience
 export type { CategoryId } from './scene/products';
-export type { Category, ScanCard, ScanRow } from './types';
+export type {
+  Category,
+  ScanCard,
+  ScanRow,
+  ScannedProduct,
+  ShelfFlavor,
+  ShelfStock,
+} from './types';
 
 /** Mélange de vue à partir duquel on considère la tablette « lue ». */
 const READING_BLEND = 0.4;
@@ -24,14 +44,16 @@ export interface ExperienceEvents {
   onPlayingChange(playing: boolean): void;
   /** Tablette levée devant les yeux : le viseur s'efface. */
   onReadingChange(reading: boolean): void;
-  /** Fiche d'une rubrique scannée, fournie par l'interface (données de l'API). */
-  describeCategory(category: Category): ScanCard;
+  /** Fiche du produit scanné, fournie par l'interface (données de l'API). */
+  describeProduct(product: ScannedProduct): ScanCard;
 }
 
 export interface Experience {
   enter(): void;
   exit(): void;
-  /** Redemande la fiche du dernier rayon scanné (données arrivées depuis). */
+  /** Pose les arômes des données sur les produits. */
+  stock(flavors: ShelfStock): void;
+  /** Redemande la fiche du dernier produit scanné (données arrivées depuis). */
   refreshCard(): void;
   dispose(): void;
 }
@@ -82,7 +104,7 @@ function buildWorld(container: HTMLElement): World {
 /** Clic en visite : range la tablette, ou scanne le produit visé. */
 function scan(
   { aim, focus, gear, market }: World,
-  show: (category: Category) => void,
+  show: (product: ScannedProduct) => void,
 ) {
   if (focus.engaged) {
     focus.release();
@@ -94,9 +116,10 @@ function scan(
     return;
   }
   const category = categoryOf(hit.object);
-  if (!category) return;
+  const trendId = trendIdOf(hit.object);
+  if (!category || !trendId) return;
   focus.begin();
-  show(category);
+  show({ category, trendId });
   gear.fire(aim.surfacePoint(market.group));
 }
 
@@ -140,15 +163,15 @@ function sessionHandlers(
   return { onLock, onUnlock };
 }
 
-/** Fiche de la tablette : se souvient du dernier rayon pour la redessiner. */
+/** Fiche de la tablette : se souvient du dernier produit pour la redessiner. */
 function createCardDisplay(
   gear: Gear,
-  describe: ExperienceEvents['describeCategory'],
+  describe: ExperienceEvents['describeProduct'],
 ) {
-  let last: Category | null = null;
-  const show = (category: Category) => {
-    last = category;
-    gear.show(describe(category));
+  let last: ScannedProduct | null = null;
+  const show = (product: ScannedProduct) => {
+    last = product;
+    gear.show(describe(product));
   };
   const refresh = () => {
     if (last) gear.show(describe(last));
@@ -160,7 +183,7 @@ function bindInput(
   world: World,
   events: ExperienceEvents,
   setReading: (v: boolean) => void,
-  show: (category: Category) => void,
+  show: (product: ScannedProduct) => void,
 ) {
   const { controls } = world.walk;
   const { canvas } = world.stage;
@@ -195,7 +218,7 @@ export function createExperience(
 ): Experience {
   const world = buildWorld(container);
   const setReading = onChange(events.onReadingChange);
-  const card = createCardDisplay(world.gear, events.describeCategory);
+  const card = createCardDisplay(world.gear, events.describeProduct);
   const unbind = bindInput(world, events, setReading, card.show);
   const stopLoop = startLoop(createFrame(world, setReading));
   exposeForDebug(world.stage);
@@ -211,5 +234,11 @@ export function createExperience(
     world.walk.dispose();
     world.stage.dispose();
   };
-  return { enter, exit, refreshCard: card.refresh, dispose };
+  return {
+    enter,
+    exit,
+    stock: (flavors) => world.market.stock(flavors),
+    refreshCard: card.refresh,
+    dispose,
+  };
 }

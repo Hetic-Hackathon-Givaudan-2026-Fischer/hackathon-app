@@ -5,7 +5,14 @@ FROM debian:trixie-slim AS runtime
 # upgrade : correctifs Debian publiés depuis la construction de l'image de base
 # (sinon Trivy remonte les CVE corrigées d'apt, openssl, perl, util-linux, zlib…).
 # ca-certificates : appels HTTPS sortants (vérification TLS)
+# deb.debian.org (Fastly) est parfois bloqué par un filtre (HTTP 403) : on retente
+# alors sur le miroir ftp.fr.debian.org, joignable en HTTP.
 RUN apt-get update \
+    || { \
+      sed -i 's|http://deb.debian.org|http://ftp.fr.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+      && rm -rf /var/lib/apt/lists/* \
+      && apt-get update; \
+    } \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends ca-certificates python3 \
     && rm -rf /var/lib/apt/lists/*

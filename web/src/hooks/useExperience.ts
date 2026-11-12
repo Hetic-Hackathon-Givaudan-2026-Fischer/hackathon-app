@@ -8,17 +8,18 @@ import {
 import { ensureBrandFont } from '../brand';
 import {
   createExperience,
-  type Category,
   type Experience,
   type ScanCard,
+  type ScannedProduct,
+  type ShelfStock,
 } from '../engine/experience';
 
-export type DescribeCategory = (category: Category) => ScanCard;
+export type DescribeProduct = (product: ScannedProduct) => ScanCard;
 
 export interface ExperienceState {
   /** Visite en cours (souris verrouillée). */
   playing: boolean;
-  /** Tablette levée : fiche de la rubrique en lecture. */
+  /** Tablette levée : fiche de l'arôme en lecture. */
   reading: boolean;
   /** Démarre / reprend la visite 3D (verrouille la souris). */
   enter: () => void;
@@ -29,17 +30,20 @@ export interface ExperienceState {
 /**
  * Monte le moteur 3D dans `containerRef` une fois la police chargée (les
  * textures canvas en dépendent), et le libère au démontage. `describe` donne
- * la fiche d'un rayon scanné : toujours la dernière version, même si les
- * données arrivent après la création du moteur.
+ * la fiche de l'arôme scanné : toujours la dernière version, même si les
+ * données arrivent après la création du moteur. `stock` pose ces arômes
+ * sur les produits du type qui leur correspond.
  */
 export function useExperience(
   containerRef: RefObject<HTMLElement | null>,
-  describe: DescribeCategory,
+  describe: DescribeProduct,
+  stock: ShelfStock,
 ): ExperienceState {
   const [playing, setPlaying] = useState(false);
   const [reading, setReading] = useState(false);
   const experienceRef = useRef<Experience | null>(null);
   const describeRef = useRef(describe);
+  const stockRef = useRef(stock);
 
   // Nouvelles données : la fiche déjà affichée (ex. « Chargement… ») se met à jour
   useEffect(() => {
@@ -48,16 +52,23 @@ export function useExperience(
   }, [describe]);
 
   useEffect(() => {
+    stockRef.current = stock;
+    experienceRef.current?.stock(stock);
+  }, [stock]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     let cancelled = false;
     void ensureBrandFont().then(() => {
       if (cancelled) return;
-      experienceRef.current = createExperience(container, {
+      const experience = createExperience(container, {
         onPlayingChange: setPlaying,
         onReadingChange: setReading,
-        describeCategory: (category) => describeRef.current(category),
+        describeProduct: (product) => describeRef.current(product),
       });
+      experience.stock(stockRef.current);
+      experienceRef.current = experience;
     });
     return () => {
       cancelled = true;

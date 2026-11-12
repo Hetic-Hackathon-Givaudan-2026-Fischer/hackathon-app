@@ -24,7 +24,7 @@ export function Sidebar({ origin, onEnter3D }: SidebarProps) {
         <nav className="flex flex-col gap-1 px-3 pt-6">
           <NavItem active label="Tendances & signaux" icon={HOME_ICON} />
           <NavItem
-            label="Expérience magasin 3D"
+            label="Showroom digital"
             icon={STORE_ICON}
             onClick={onEnter3D}
           />

@@ -1,7 +1,7 @@
 // Vitrine réfrigérée : caisson sombre, deux portes vitrées, trois étagères.
 import * as THREE from 'three';
 import type { Category } from '../../types';
-import { commitProducts, fillShelf } from '../products';
+import { type ShelfLevel } from '../products';
 import { type BayBuild, box } from './context';
 import {
   type MarketMaterials,
@@ -91,42 +91,34 @@ function front({ metalDark, bumper }: MarketMaterials): THREE.Mesh[] {
   return [mid, rail];
 }
 
-/** Tablette, réglette LED froide, puis les produits. */
-function addShelf(build: BayBuild, y: number, feature: boolean): void {
+/** Hauteur, largeur et profondeur utiles de chaque tablette. */
+export function fridgeLevels(hero: boolean): ShelfLevel[] {
+  return SHELF_YS.map((y, shelf) => ({
+    y: y + 0.012,
+    width: W - 0.3,
+    depth: D - 0.1,
+    feature: hero && shelf === FEATURE_SHELF,
+  }));
+}
+
+/** Tablette et réglette LED froide. Les produits sont posés ensuite. */
+function addShelf(build: BayBuild, y: number): void {
   const { bay, materials } = build;
   bay.add(
     box(materials.whiteShelf, [W - 0.22, 0.02, D - 0.18], [0, y, 0]),
     box(ledCold, [W - 0.3, 0.006, 0.016], [0, y + 0.04, -D / 2 + 0.14]),
   );
-  const heroes = fillShelf(
-    build.stock,
-    build.category,
-    y + 0.012,
-    W - 0.3,
-    D - 0.1,
-    feature,
-  );
-  heroes.forEach((item) => bay.add(item));
 }
 
-/** Gabarit de frigo ; `feature` met un produit en avant (2e étagère). */
+/** Gabarit de frigo, sans les produits (posés quand les arômes sont connus). */
 export function createFridge(
   category: Category,
   materials: MarketMaterials,
-  feature: boolean,
 ): THREE.Group {
-  const build: BayBuild = {
-    bay: new THREE.Group(),
-    stock: [],
-    category,
-    materials,
-  };
+  const build: BayBuild = { bay: new THREE.Group(), category, materials };
   build.bay.add(...cabinet(materials));
   for (let i = 0; i < 2; i += 1) build.bay.add(...door(materials, i));
   build.bay.add(...front(materials));
-  SHELF_YS.forEach((y, shelf) =>
-    addShelf(build, y, feature && shelf === FEATURE_SHELF),
-  );
-  commitProducts(build.bay, category, build.stock, []);
+  SHELF_YS.forEach((y) => addShelf(build, y));
   return build.bay;
 }

@@ -1,22 +1,30 @@
 import { useCallback, useMemo } from 'react';
-import type { Category } from '../../engine/experience';
-import { useAllTrends } from '../../hooks/useTrendsApi';
+import type { ScannedProduct } from '../../engine/experience';
+import { useAllTrends, useDatasetReport } from '../../hooks/useTrendsApi';
 import { buildScanCard, fromTrendList } from '../../immersive/scanCard';
+import { shelfStock } from '../../immersive/shelfStock';
 import { ImmersiveView } from './ImmersiveView';
 
 /** Vue immersive interne, ouverte depuis le dashboard : tous les arômes. */
 export function InternalImmersive({ onBack }: { onBack: () => void }) {
   const { data, error, reload } = useAllTrends();
+  const report = useDatasetReport();
   const scanData = useMemo(
     () => (data ? fromTrendList(data) : undefined),
     [data],
   );
+  const stock = useMemo(() => shelfStock(scanData?.trends ?? []), [scanData]);
   const describe = useCallback(
-    (category: Category) => buildScanCard(category, { data: scanData, error }),
-    [scanData, error],
+    (product: ScannedProduct) =>
+      buildScanCard(
+        product,
+        { data: scanData, error },
+        report.data?.indicators,
+      ),
+    [scanData, error, report.data],
   );
   return (
-    <ImmersiveView describe={describe} onBack={onBack}>
+    <ImmersiveView describe={describe} stock={stock} onBack={onBack}>
       {error && (
         <p
           role="alert"
