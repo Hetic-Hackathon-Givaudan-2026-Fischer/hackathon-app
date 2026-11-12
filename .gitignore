@@ -10,3 +10,6 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Vercel : lien local du projet (vercel link), jamais commité
+.vercel/

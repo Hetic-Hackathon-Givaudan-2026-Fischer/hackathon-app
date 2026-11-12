@@ -1,0 +1,13 @@
+# Fichiers jamais envoyés à Vercel par `vercel deploy` (CLI) : données locales,
+# secrets et environnements reconstruits au build (ADR 0013)
+db/data/
+.env
+**/.env
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+web/dist/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
