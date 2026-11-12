@@ -1,6 +1,6 @@
 # 0010. Ouvrir le showroom aux clients par un lien temporaire
 
-- Statut : proposée
+- Statut : acceptée
 - Date : 2026-11-12
 - Décideurs : Arnaud Fischer
 

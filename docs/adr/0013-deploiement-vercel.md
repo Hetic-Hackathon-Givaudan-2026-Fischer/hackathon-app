@@ -1,6 +1,6 @@
 # 0013. Déployer front et API sur Vercel, en services
 
-- Statut : proposée
+- Statut : acceptée
 - Date : 2026-11-12
 - Décideurs : Arnaud Fischer
 

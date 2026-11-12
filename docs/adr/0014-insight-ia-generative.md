@@ -1,6 +1,6 @@
 # 0014. Relayer l'explication rédigée par l'IA Data/IA (insight)
 
-- Statut : proposée
+- Statut : acceptée
 - Date : 2026-11-12
 - Décideurs : Arnaud Fischer
 
