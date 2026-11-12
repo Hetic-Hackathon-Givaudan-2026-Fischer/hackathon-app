@@ -23,6 +23,8 @@ export interface ExperienceEvents {
 }
 
 export interface Experience {
+  enter(): void;
+  exit(): void;
   dispose(): void;
 }
 
@@ -168,11 +170,17 @@ export function createExperience(
   const unbind = bindInput(world, events, setReading);
   const stopLoop = startLoop(createFrame(world, setReading));
   exposeForDebug(world.stage);
+  const enter = () => {
+    if (!world.walk.controls.isLocked) world.walk.controls.lock();
+  };
+  const exit = () => {
+    if (world.walk.controls.isLocked) world.walk.controls.unlock();
+  };
   const dispose = () => {
     stopLoop();
     unbind();
     world.walk.dispose();
     world.stage.dispose();
   };
-  return { dispose };
+  return { enter, exit, dispose };
 }
