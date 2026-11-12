@@ -1,5 +1,5 @@
 // Mise en forme des valeurs de l'API pour l'affichage (fr-FR), partagée par les vues.
-import type { Origin } from '../api/types';
+import type { AnalysisConfidence, AnalysisStatus, Origin } from '../api/types';
 
 const LOCALE = 'fr-FR';
 const compact = new Intl.NumberFormat(LOCALE, {
@@ -21,6 +21,24 @@ const longDate = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium' });
 export const ORIGIN_LABELS: Readonly<Record<Origin, string>> = {
   data_ai: 'API Data/IA',
   csv_fallback: 'CSV de repli, sans modèle',
+};
+
+/** Dynamique calculée par Data/IA (`analysis.status`). */
+export const ANALYSIS_STATUS_LABELS: Readonly<Record<AnalysisStatus, string>> =
+  {
+    exploding: 'Explosion',
+    emerging: 'Émergente',
+    growing: 'En croissance',
+    seasonal: 'Saisonnière',
+    stable: 'Stable',
+    declining: 'En déclin',
+    insufficient_data: 'Données insuffisantes',
+  };
+
+export const CONFIDENCE_LABELS: Readonly<Record<AnalysisConfidence, string>> = {
+  high: 'Haute',
+  medium: 'Moyenne',
+  low: 'Faible',
 };
 
 /** Texte affiché à la place d'une valeur absente : jamais de cellule vide. */

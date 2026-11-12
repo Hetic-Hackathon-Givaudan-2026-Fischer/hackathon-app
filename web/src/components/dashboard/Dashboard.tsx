@@ -1,12 +1,17 @@
 import { useCallback, useState } from 'react';
 import { useTrendFilters } from '../../hooks/useTrendFilters';
-import { useFamilies, useSummary } from '../../hooks/useTrendsApi';
+import {
+  useFamilies,
+  useProductTypes,
+  useSummary,
+} from '../../hooks/useTrendsApi';
 import { TrendDrawer } from './drawer/TrendDrawer';
 import { FallbackBanner } from './FallbackBanner';
 import { KpiCards, TopGrowing } from './KpiCards';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { ShowroomLinkDialog } from './ShowroomLinkDialog';
+import { SimulationDialog } from './SimulationDialog';
 import { TrendsPanel } from './TrendsPanel';
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from './ui';
 
@@ -23,9 +28,11 @@ interface DashboardProps {
 export function Dashboard({ active, onEnter3D }: DashboardProps) {
   const summary = useSummary();
   const families = useFamilies().data?.items ?? [];
+  const productTypes = useProductTypes().data?.items ?? [];
   const filters = useTrendFilters();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [linkDialog, setLinkDialog] = useState(false);
+  const [simulation, setSimulation] = useState(false);
   const closeDrawer = useCallback(() => setSelectedId(null), []);
   const origin = summary.data?.origin;
 
@@ -44,6 +51,7 @@ export function Dashboard({ active, onEnter3D }: DashboardProps) {
           <div className="mx-auto max-w-[1600px] space-y-6">
             <PageHeader
               onEnter3D={onEnter3D}
+              onSimulate={() => setSimulation(true)}
               onShareLink={() => setLinkDialog(true)}
             />
             <FallbackBanner
@@ -55,6 +63,7 @@ export function Dashboard({ active, onEnter3D }: DashboardProps) {
             <TrendsPanel
               filters={filters}
               families={families}
+              productTypes={productTypes}
               summary={summary.data}
               onSelect={setSelectedId}
             />
@@ -76,16 +85,18 @@ export function Dashboard({ active, onEnter3D }: DashboardProps) {
           onClose={() => setLinkDialog(false)}
         />
       )}
+      {simulation && <SimulationDialog onClose={() => setSimulation(false)} />}
     </div>
   );
 }
 
 interface PageHeaderProps {
   onEnter3D: () => void;
+  onSimulate: () => void;
   onShareLink: () => void;
 }
 
-function PageHeader({ onEnter3D, onShareLink }: PageHeaderProps) {
+function PageHeader({ onEnter3D, onSimulate, onShareLink }: PageHeaderProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <h1 className="text-[24px] leading-[1.3] font-semibold">
@@ -94,6 +105,9 @@ function PageHeader({ onEnter3D, onShareLink }: PageHeaderProps) {
       <div className="flex flex-wrap gap-2.5">
         <button type="button" onClick={onEnter3D} className={BUTTON_SECONDARY}>
           Ouvrir la vue immersive
+        </button>
+        <button type="button" onClick={onSimulate} className={BUTTON_SECONDARY}>
+          Simuler un arôme
         </button>
         <button type="button" onClick={onShareLink} className={BUTTON_PRIMARY}>
           Générer un lien showroom

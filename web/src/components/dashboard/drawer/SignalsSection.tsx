@@ -3,7 +3,8 @@ import { formatDate } from '../../../lib/format';
 import { SeriesChart } from './SeriesChart';
 
 /** Lien externe Data/IA : http(s) seulement, sinon pas de lien. */
-function safeUrl(url: string): string | undefined {
+function safeUrl(url: string | null): string | undefined {
+  if (!url) return undefined;
   try {
     const { protocol } = new URL(url);
     return protocol === 'https:' || protocol === 'http:' ? url : undefined;
@@ -42,14 +43,14 @@ export function SignalsSection({ trend }: { trend: TrendDetailRead }) {
           <h3 className="mb-2 text-[15px] font-medium">Sources citées</h3>
           <ul className="space-y-2 text-[13px]">
             {trend.evidence.map((item, index) => (
-              <li key={`${index}-${item.url}`}>
+              <li key={`${index}-${item.url ?? item.title}`}>
                 <a
                   href={safeUrl(item.url)}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="text-[#008075] hover:underline"
                 >
-                  {item.title}
+                  {item.title ?? `Source ${item.source}`}
                 </a>
                 <span className="block text-[11px] text-[#71717A]">
                   {item.source} · {formatDate(item.published)}

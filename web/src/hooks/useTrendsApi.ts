@@ -4,6 +4,7 @@ import {
   fetchDatasetReport,
   fetchFamilies,
   fetchHealth,
+  fetchProductTypes,
   fetchShowroom,
   fetchSummary,
   fetchTrend,
@@ -21,6 +22,10 @@ export const useSummary = () =>
 
 export const useFamilies = () =>
   useApiResource({ key: 'families', load: fetchFamilies });
+
+/** Types de produits (rayons) : vide en repli CSV. */
+export const useProductTypes = () =>
+  useApiResource({ key: 'product-types', load: fetchProductTypes });
 
 /** Rapport global : sert de catalogue des indicateurs (libellé, source). */
 export const useDatasetReport = () =>

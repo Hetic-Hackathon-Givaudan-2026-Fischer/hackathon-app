@@ -5,6 +5,7 @@ import { Modal } from '../Modal';
 import { ErrorState, LoadingState } from '../states';
 import { StatusBadge } from '../StatusBadge';
 import { BUTTON_SECONDARY, EYEBROW } from '../ui';
+import { AnalysisSection } from './AnalysisSection';
 import { IndicatorSources } from './IndicatorSources';
 import { IssueForm } from './IssueForm';
 import { ModelSection } from './ModelSection';
@@ -48,6 +49,7 @@ export function TrendDrawer(props: TrendDrawerProps) {
               {formatDate(detail.data_date)}
             </p>
             <ModelSection trend={detail} />
+            <AnalysisSection trend={detail} />
             <IndicatorSources report={report} />
             <SignalsSection trend={detail} />
             <IssueForm trendId={detail.id} trendName={detail.name} />

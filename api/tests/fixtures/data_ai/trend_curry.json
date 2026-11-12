@@ -3,7 +3,31 @@
   "aroma_name": "Curry",
   "aroma_name_en": "Curry",
   "family": "epice",
-  "category_3d_aisle": "Épicerie salée & sauces",
+  "category_3d_aisle": "Plats préparés et produits traiteur",
+  "main_product_type": "plats",
+  "product_types": [
+    {
+      "id": "plats",
+      "label": "Plats préparés et produits traiteur",
+      "products": 79,
+      "share": 0.427,
+      "basis": "produits"
+    },
+    {
+      "id": "sauces",
+      "label": "Sauces et condiments",
+      "products": 68,
+      "share": 0.368,
+      "basis": "produits"
+    },
+    {
+      "id": "snacks",
+      "label": "Snacks et produits apéritifs",
+      "products": 20,
+      "share": 0.108,
+      "basis": "produits"
+    }
+  ],
   "status_label": "En hausse : probablement passager (buzz)",
   "scores": {
     "v1_rule_verdict": "buzz",

@@ -16,8 +16,12 @@ from app.services.ports import (
     NewDataIssue,
     NewShowroomLink,
     Origin,
+    ProductShare,
     ShowroomLinkRecord,
+    SimulationInput,
+    SimulationResult,
     Sourced,
+    TrendAnalysis,
     TrendRecord,
 )
 
@@ -56,6 +60,24 @@ def make_trend(
         status=status,
         score=score,
     )
+
+
+def with_product_types(trend: TrendRecord, main: str, *others: str) -> TrendRecord:
+    """L'arôme présent dans `main` (type principal) et `others`."""
+    shares = tuple(
+        ProductShare(type_id, type_id.capitalize(), 10, 0.5, "produits")
+        for type_id in (main, *others)
+    )
+    return replace(trend, main_product_type=main, product_types=shares)
+
+
+def with_analysis(
+    trend: TrendRecord, buzz_score: int | None, trend_score: int | None = None
+) -> TrendRecord:
+    analysis = TrendAnalysis(
+        "growing", "hausse régulière", buzz_score, trend_score, "high"
+    )
+    return replace(trend, analysis=analysis)
 
 
 def make_status(origin: Origin = "csv_fallback") -> DataStatus:
@@ -107,6 +129,20 @@ class FakeModelMetrics:
         if self._metrics is None:
             raise DataSourceUnavailableError("injoignable (ConnectError)")
         return self._metrics
+
+
+class FakeSimulator:
+    """PerennitySimulator ; sans résultat, se comporte comme Data/IA coupée."""
+
+    def __init__(self, result: SimulationResult | None = None) -> None:
+        self._result = result
+        self.received: list[SimulationInput] = []
+
+    async def simulate(self, inputs: SimulationInput) -> SimulationResult:
+        self.received.append(inputs)
+        if self._result is None:
+            raise DataSourceUnavailableError("injoignable (ConnectError)")
+        return self._result
 
 
 # --- Signalements et showroom -----------------------------------------------------

@@ -46,6 +46,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/product-types': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Types de produits (rayons)
+     * @description Chaque type, ses arômes (principal ou non) ; vide en repli CSV.
+     */
+    get: operations['list_product_types_api_v1_product_types_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/dashboard/summary': {
     parameters: {
       query?: never;
@@ -253,6 +273,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/simulate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Probabilité qu'une hausse soit durable (modèle V2)
+     * @description Calcul par l'API Data/IA ; `503` en repli CSV (aucun modèle).
+     */
+    post: operations['simulate_api_v1_simulate_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -436,9 +476,12 @@ export interface components {
       /** Published */
       published: string | null;
       /** Title */
-      title: string;
-      /** Url */
-      url: string;
+      title: string | null;
+      /**
+       * Url
+       * @description Absente pour certaines vidéos YouTube
+       */
+      url: string | null;
     };
     /** FamilyListRead */
     FamilyListRead: {
@@ -593,6 +636,68 @@ export interface components {
       version: string | null;
       /** Description */
       description: string;
+    };
+    /** ProductShareRead */
+    ProductShareRead: {
+      /**
+       * Id
+       * @description Type de produit (`boissons`, `glaces`…)
+       */
+      id: string;
+      /** Label */
+      label: string;
+      /**
+       * Products
+       * @description Produits Open Food Facts de ce type
+       */
+      products: number;
+      /**
+       * Share
+       * @description Part des produits de l'arôme (0-1) ; null si basis = famille
+       */
+      share: number | null;
+      /**
+       * Basis
+       * @description `produits` : vrais produits ; `famille` : déduit de la famille
+       * @enum {string}
+       */
+      basis: 'produits' | 'famille';
+    };
+    /**
+     * ProductTypeListRead
+     * @description Types de produits (rayons) ; vide en repli CSV.
+     */
+    ProductTypeListRead: {
+      /**
+       * Origin
+       * @description `data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle
+       * @enum {string}
+       */
+      origin: 'data_ai' | 'csv_fallback';
+      /**
+       * Data Date
+       * @description Date des données servies
+       */
+      data_date: string | null;
+      /** Items */
+      items: components['schemas']['ProductTypeRead'][];
+    };
+    /** ProductTypeRead */
+    ProductTypeRead: {
+      /** Id */
+      id: string;
+      /** Label */
+      label: string;
+      /**
+       * Main Count
+       * @description Arômes dont c'est le type principal
+       */
+      main_count: number;
+      /**
+       * Any Count
+       * @description Arômes présents dans ce type
+       */
+      any_count: number;
     };
     /** QualityMetricRead */
     QualityMetricRead: {
@@ -759,6 +864,69 @@ export interface components {
       score: number | null;
     };
     /**
+     * SimulationCreate
+     * @description Variables d'un arôme EN HAUSSE ; valeurs par défaut : un cas type.
+     */
+    SimulationCreate: {
+      /**
+       * Growth 13W
+       * @description Croissance sur 13 semaines (0.45 = +45 %)
+       * @default 0.45
+       */
+      growth_13w: number;
+      /**
+       * Growth 52W
+       * @description Croissance vs la même période l'an dernier
+       * @default 0.3
+       */
+      growth_52w: number | null;
+      /**
+       * Volatility 26W
+       * @description Écart-type / moyenne sur 26 semaines
+       * @default 0.25
+       */
+      volatility_26w: number | null;
+      /**
+       * Spike Ratio
+       * @description Pic des 13 dernières semaines / moyenne sur 26
+       * @default 1.4
+       */
+      spike_ratio: number | null;
+      /**
+       * Acceleration
+       * @description Moyenne 4 semaines / moyenne 13 semaines
+       * @default 1.1
+       */
+      acceleration: number | null;
+      /**
+       * Popularity Vs Anchor
+       * @description Niveau de recherche / vanille
+       * @default 0.2
+       */
+      popularity_vs_anchor: number | null;
+      /**
+       * Market Products Log
+       * @description log(1 + nombre de produits en rayon)
+       * @default 3
+       */
+      market_products_log: number | null;
+    };
+    /** SimulationRead */
+    SimulationRead: {
+      /**
+       * Probability
+       * @description Probabilité V2 que la hausse dure un an
+       */
+      probability: number;
+      /**
+       * Verdict
+       * @enum {string}
+       */
+      verdict: 'durable' | 'buzz probable' | 'incertain';
+      /** Note */
+      note: string;
+    };
+    /**
      * Source
      * @description Source d'origine d'un indicateur.
      * @enum {string}
@@ -770,6 +938,45 @@ export interface components {
       | 'presse'
       | 'reseaux_sociaux'
       | 'pinterest';
+    /**
+     * TrendAnalysisRead
+     * @description Indicateurs métier Data/IA, calculés sans LLM ; null en repli CSV.
+     */
+    TrendAnalysisRead: {
+      /**
+       * Status
+       * @description Dynamique de la tendance
+       * @enum {string}
+       */
+      status:
+        | 'exploding'
+        | 'emerging'
+        | 'growing'
+        | 'seasonal'
+        | 'stable'
+        | 'declining'
+        | 'insufficient_data';
+      /**
+       * Reason
+       * @description Pourquoi ce statut, en une phrase
+       */
+      reason: string;
+      /**
+       * Buzz Score
+       * @description Bêta : rang relatif de l'attention médiatique (0-100)
+       */
+      buzz_score: number | null;
+      /**
+       * Trend Score
+       * @description Bêta : rang relatif de la dynamique de recherche (0-100)
+       */
+      trend_score: number | null;
+      /**
+       * Confidence
+       * @enum {string}
+       */
+      confidence: 'high' | 'medium' | 'low';
+    };
     /**
      * TrendDetailRead
      * @description Fiche complète ; série, preuves et points de vigilance : Data/IA seulement.
@@ -813,6 +1020,23 @@ export interface components {
       indicators: {
         [key: string]: number | null;
       };
+      /**
+       * Name En
+       * @description Nom anglais (Data/IA seulement)
+       */
+      name_en: string | null;
+      /**
+       * Main Product Type
+       * @description Type de produit principal (Data/IA seulement)
+       */
+      main_product_type: string | null;
+      /**
+       * Product Types
+       * @description Types de produits où l'arôme est présent ; vide en repli CSV
+       */
+      product_types: components['schemas']['ProductShareRead'][];
+      /** @description Indicateurs métier Data/IA ; null en repli CSV */
+      analysis: components['schemas']['TrendAnalysisRead'] | null;
       /**
        * Origin
        * @description `data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle
@@ -905,6 +1129,23 @@ export interface components {
       indicators: {
         [key: string]: number | null;
       };
+      /**
+       * Name En
+       * @description Nom anglais (Data/IA seulement)
+       */
+      name_en: string | null;
+      /**
+       * Main Product Type
+       * @description Type de produit principal (Data/IA seulement)
+       */
+      main_product_type: string | null;
+      /**
+       * Product Types
+       * @description Types de produits où l'arôme est présent ; vide en repli CSV
+       */
+      product_types: components['schemas']['ProductShareRead'][];
+      /** @description Indicateurs métier Data/IA ; null en repli CSV */
+      analysis: components['schemas']['TrendAnalysisRead'] | null;
     };
     /**
      * TrendReportRead
@@ -1005,6 +1246,26 @@ export interface operations {
       };
     };
   };
+  list_product_types_api_v1_product_types_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ProductTypeListRead'];
+        };
+      };
+    };
+  };
   read_summary_api_v1_dashboard_summary_get: {
     parameters: {
       query?: never;
@@ -1031,10 +1292,14 @@ export interface operations {
         family?: string | null;
         /** @description Libellé exact du statut */
         status?: string | null;
+        /** @description Type de produit, principal ou secondaire (GET /product-types) */
+        product_type?: string | null;
         search?: string | null;
         sort?:
           | 'name'
           | 'score'
+          | 'buzz_score'
+          | 'trend_score'
           | 'recherche_croissance_13s_pct'
           | 'recherche_croissance_52s_pct'
           | 'recherche_volatilite_26s'
@@ -1414,6 +1679,48 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorRead'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Base ou source de données injoignable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorRead'];
+        };
+      };
+    };
+  };
+  simulate_api_v1_simulate_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SimulationCreate'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['SimulationRead'];
         };
       };
       /** @description Validation Error */

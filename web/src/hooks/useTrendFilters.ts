@@ -13,6 +13,7 @@ const SEARCH_DELAY_MS = 250;
 interface Filters {
   family: string;
   status: string;
+  productType: string;
   search: string;
   sort: TrendSortField;
   order: SortOrder;
@@ -22,6 +23,7 @@ interface Filters {
 const INITIAL: Filters = {
   family: '',
   status: '',
+  productType: '',
   search: '',
   sort: GROWTH_INDICATOR,
   order: 'desc',
@@ -41,16 +43,17 @@ export function useTrendFilters() {
   const search = useDebouncedValue(filters.search.trim(), SEARCH_DELAY_MS);
 
   // Filtre vide = absent de la query string
-  const query = useMemo<TrendListQuery>(
-    () => ({
-      ...filters,
+  const query = useMemo<TrendListQuery>(() => {
+    const { productType, ...rest } = filters;
+    return {
+      ...rest,
       family: filters.family || undefined,
       status: filters.status || undefined,
+      product_type: productType || undefined,
       search: search || undefined,
       page_size: PAGE_SIZE,
-    }),
-    [filters, search],
-  );
+    };
+  }, [filters, search]);
 
   const update = (patch: Partial<Omit<Filters, 'page'>>) =>
     setFilters((prev) => ({ ...prev, ...patch, page: 1 }));

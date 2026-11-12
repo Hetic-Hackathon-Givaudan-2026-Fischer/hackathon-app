@@ -20,3 +20,13 @@ def test_families(client: TestClient) -> None:
         {"family": "epice", "trend_count": 1, "average_growth": None},
         {"family": "fruits", "trend_count": 2, "average_growth": 20.0},
     ]
+
+
+def test_product_types(client: TestClient) -> None:
+    body = client.get("/api/v1/product-types").json()
+
+    assert body["origin"] == "data_ai"
+    assert body["items"] == [
+        {"id": "boissons", "label": "Boissons", "main_count": 1, "any_count": 1},
+        {"id": "glaces", "label": "Glaces", "main_count": 0, "any_count": 1},
+    ]

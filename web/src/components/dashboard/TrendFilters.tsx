@@ -1,33 +1,72 @@
-import type { DashboardSummaryRead, FamilyRead } from '../../api/types';
+import type {
+  DashboardSummaryRead,
+  FamilyRead,
+  ProductTypeRead,
+} from '../../api/types';
 import { familyLabel } from '../../lib/format';
 import { EYEBROW, FIELD } from './ui';
+
+interface FilterPatch {
+  family?: string;
+  status?: string;
+  productType?: string;
+}
 
 interface TrendFiltersProps {
   family: string;
   status: string;
+  productType: string;
   families: FamilyRead[];
+  productTypes: ProductTypeRead[];
   summary: DashboardSummaryRead | undefined;
-  onChange: (patch: { family?: string; status?: string }) => void;
+  onChange: (patch: FilterPatch) => void;
 }
 
 export function TrendFilters(props: TrendFiltersProps) {
   return (
     <div className="flex flex-col gap-3">
-      <select
-        value={props.family}
-        onChange={(event) => props.onChange({ family: event.target.value })}
-        aria-label="Filtrer par famille d'arômes"
-        className={`${FIELD} w-full cursor-pointer sm:w-64`}
-      >
-        <option value="">Toutes les familles</option>
-        {props.families.map((item) => (
-          <option key={item.family} value={item.family}>
-            {familyLabel(item.family)} ({item.trend_count})
-          </option>
-        ))}
-      </select>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <select
+          value={props.family}
+          onChange={(event) => props.onChange({ family: event.target.value })}
+          aria-label="Filtrer par famille d'arômes"
+          className={`${FIELD} w-full cursor-pointer sm:w-64`}
+        >
+          <option value="">Toutes les familles</option>
+          {props.families.map((item) => (
+            <option key={item.family} value={item.family}>
+              {familyLabel(item.family)} ({item.trend_count})
+            </option>
+          ))}
+        </select>
+        <ProductTypeSelect {...props} />
+      </div>
       <StatusPills {...props} />
     </div>
+  );
+}
+
+/** Types de produits Data/IA ; masqué en repli CSV (aucun type connu). */
+function ProductTypeSelect({
+  productType,
+  productTypes,
+  onChange,
+}: TrendFiltersProps) {
+  if (productTypes.length === 0 && !productType) return null;
+  return (
+    <select
+      value={productType}
+      onChange={(event) => onChange({ productType: event.target.value })}
+      aria-label="Filtrer par type de produit"
+      className={`${FIELD} w-full cursor-pointer sm:w-72`}
+    >
+      <option value="">Tous les types de produits</option>
+      {productTypes.map((item) => (
+        <option key={item.id} value={item.id}>
+          {item.label} ({item.any_count})
+        </option>
+      ))}
+    </select>
   );
 }
 

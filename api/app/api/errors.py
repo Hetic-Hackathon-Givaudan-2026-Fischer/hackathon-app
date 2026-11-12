@@ -33,7 +33,7 @@ async def _database_unavailable(_: Request, exc: Exception) -> JSONResponse:
 
 
 async def _data_source_unavailable(_: Request, exc: Exception) -> JSONResponse:
-    # Ne devrait pas arriver : le CSV de repli prend le relais de Data/IA
+    # Tendances : le CSV prend le relais. Reste ce qui exige le modèle (simulation)
     logger.warning("Source de données indisponible : %s", exc)
     return _error(status.HTTP_503_SERVICE_UNAVAILABLE, "Source de données indisponible")
 

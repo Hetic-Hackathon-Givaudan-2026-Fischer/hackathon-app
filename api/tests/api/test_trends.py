@@ -24,6 +24,8 @@ def test_list_is_sorted_by_growth_and_carries_origin(client: TestClient) -> None
     [
         ({"family": "fruits"}, ["mango", "acai"]),
         ({"status": "buzz"}, ["acai"]),
+        ({"product_type": "glaces"}, ["acai"]),
+        ({"sort": "buzz_score"}, ["mango", "acai", "cumin"]),
         ({"search": "ACAÏ"}, ["acai"]),
         ({"sort": "name", "order": "asc"}, ["acai", "cumin", "mango"]),
         ({"page": 2, "page_size": 2}, ["cumin"]),
@@ -48,6 +50,16 @@ def test_detail(client: TestClient) -> None:
 
     assert (body["id"], body["status"], body["score"]) == ("acai", "buzz", 0.4)
     assert (body["origin"], body["series"]) == ("data_ai", [])
+    assert body["main_product_type"] == "boissons"
+    assert [share["id"] for share in body["product_types"]] == ["boissons", "glaces"]
+    assert body["analysis"] is None
+
+
+def test_detail_carries_analysis(client: TestClient) -> None:
+    analysis = client.get(f"{URL}/mango").json()["analysis"]
+
+    assert (analysis["status"], analysis["buzz_score"]) == ("growing", 80)
+    assert analysis["confidence"] == "high"
 
 
 def test_unknown_trend_is_404(client: TestClient) -> None:

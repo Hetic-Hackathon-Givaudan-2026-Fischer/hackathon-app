@@ -47,6 +47,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FamilyListRead'
+  /api/v1/product-types:
+    get:
+      tags:
+        - dashboard
+      summary: Types de produits (rayons)
+      description: Chaque type, ses arômes (principal ou non) ; vide en repli CSV.
+      operationId: list_product_types_api_v1_product_types_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductTypeListRead'
   /api/v1/dashboard/summary:
     get:
       tags:
@@ -97,6 +111,17 @@ paths:
             description: Libellé exact du statut
             title: Status
           description: Libellé exact du statut
+        - name: product_type
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                maxLength: 100
+              - type: 'null'
+            description: Type de produit, principal ou secondaire (GET /product-types)
+            title: Product Type
+          description: Type de produit, principal ou secondaire (GET /product-types)
         - name: search
           in: query
           required: false
@@ -113,6 +138,8 @@ paths:
             enum:
               - name
               - score
+              - buzz_score
+              - trend_score
               - recherche_croissance_13s_pct
               - recherche_croissance_52s_pct
               - recherche_volatilite_26s
@@ -454,6 +481,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/simulate:
+    post:
+      tags:
+        - simulation
+      summary: Probabilité qu'une hausse soit durable (modèle V2)
+      description: Calcul par l'API Data/IA ; `503` en repli CSV (aucun modèle).
+      operationId: simulate_api_v1_simulate_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationRead'
+        '503':
+          description: Base ou source de données injoignable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
     ConfusionMatrixRead:
@@ -726,11 +785,16 @@ components:
             - type: 'null'
           title: Published
         title:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Title
         url:
-          type: string
+          anyOf:
+            - type: string
+            - type: 'null'
           title: Url
+          description: Absente pour certaines vidéos YouTube
       type: object
       required:
         - source
@@ -984,6 +1048,91 @@ components:
         - version
         - description
       title: ProcessingStepRead
+    ProductShareRead:
+      properties:
+        id:
+          type: string
+          title: Id
+          description: Type de produit (`boissons`, `glaces`…)
+        label:
+          type: string
+          title: Label
+        products:
+          type: integer
+          title: Products
+          description: Produits Open Food Facts de ce type
+        share:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Share
+          description: Part des produits de l'arôme (0-1) ; null si basis = famille
+        basis:
+          type: string
+          enum:
+            - produits
+            - famille
+          title: Basis
+          description: '`produits` : vrais produits ; `famille` : déduit de la famille'
+      type: object
+      required:
+        - id
+        - label
+        - products
+        - share
+        - basis
+      title: ProductShareRead
+    ProductTypeListRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        items:
+          items:
+            $ref: '#/components/schemas/ProductTypeRead'
+          type: array
+          title: Items
+      type: object
+      required:
+        - origin
+        - data_date
+        - items
+      title: ProductTypeListRead
+      description: Types de produits (rayons) ; vide en repli CSV.
+    ProductTypeRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        label:
+          type: string
+          title: Label
+        main_count:
+          type: integer
+          title: Main Count
+          description: Arômes dont c'est le type principal
+        any_count:
+          type: integer
+          title: Any Count
+          description: Arômes présents dans ce type
+      type: object
+      required:
+        - id
+        - label
+        - main_count
+        - any_count
+      title: ProductTypeRead
     QualityMetricRead:
       properties:
         key:
@@ -1238,6 +1387,82 @@ components:
         - score
       title: ShowroomTrendRead
       description: "Ce que la vue immersive affiche d'un arôme : rien du rapport interne."
+    SimulationCreate:
+      properties:
+        growth_13w:
+          type: number
+          title: Growth 13W
+          description: Croissance sur 13 semaines (0.45 = +45 %)
+          default: 0.45
+        growth_52w:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Growth 52W
+          description: Croissance vs la même période l'an dernier
+          default: 0.3
+        volatility_26w:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Volatility 26W
+          description: Écart-type / moyenne sur 26 semaines
+          default: 0.25
+        spike_ratio:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Spike Ratio
+          description: Pic des 13 dernières semaines / moyenne sur 26
+          default: 1.4
+        acceleration:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Acceleration
+          description: Moyenne 4 semaines / moyenne 13 semaines
+          default: 1.1
+        popularity_vs_anchor:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Popularity Vs Anchor
+          description: Niveau de recherche / vanille
+          default: 0.2
+        market_products_log:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Market Products Log
+          description: log(1 + nombre de produits en rayon)
+          default: 3.0
+      type: object
+      title: SimulationCreate
+      description: "Variables d'un arôme EN HAUSSE ; valeurs par défaut : un cas type."
+    SimulationRead:
+      properties:
+        probability:
+          type: number
+          maximum: 1.0
+          minimum: 0.0
+          title: Probability
+          description: Probabilité V2 que la hausse dure un an
+        verdict:
+          type: string
+          enum:
+            - durable
+            - buzz probable
+            - incertain
+          title: Verdict
+        note:
+          type: string
+          title: Note
+      type: object
+      required:
+        - probability
+        - verdict
+        - note
+      title: SimulationRead
     Source:
       type: string
       enum:
@@ -1249,6 +1474,52 @@ components:
         - pinterest
       title: Source
       description: Source d'origine d'un indicateur.
+    TrendAnalysisRead:
+      properties:
+        status:
+          type: string
+          enum:
+            - exploding
+            - emerging
+            - growing
+            - seasonal
+            - stable
+            - declining
+            - insufficient_data
+          title: Status
+          description: Dynamique de la tendance
+        reason:
+          type: string
+          title: Reason
+          description: Pourquoi ce statut, en une phrase
+        buzz_score:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Buzz Score
+          description: "Bêta : rang relatif de l'attention médiatique (0-100)"
+        trend_score:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Trend Score
+          description: 'Bêta : rang relatif de la dynamique de recherche (0-100)'
+        confidence:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          title: Confidence
+      type: object
+      required:
+        - status
+        - reason
+        - buzz_score
+        - trend_score
+        - confidence
+      title: TrendAnalysisRead
+      description: Indicateurs métier Data/IA, calculés sans LLM ; null en repli CSV.
     TrendDetailRead:
       properties:
         id:
@@ -1298,6 +1569,29 @@ components:
           type: object
           title: Indicators
           description: Indicateurs bruts, clés de GET /report (`indicators`)
+        name_en:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name En
+          description: Nom anglais (Data/IA seulement)
+        main_product_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Main Product Type
+          description: Type de produit principal (Data/IA seulement)
+        product_types:
+          items:
+            $ref: '#/components/schemas/ProductShareRead'
+          type: array
+          title: Product Types
+          description: Types de produits où l'arôme est présent ; vide en repli CSV
+        analysis:
+          anyOf:
+            - $ref: '#/components/schemas/TrendAnalysisRead'
+            - type: 'null'
+          description: Indicateurs métier Data/IA ; null en repli CSV
         origin:
           type: string
           enum:
@@ -1341,6 +1635,10 @@ components:
         - confidence
         - aisle
         - indicators
+        - name_en
+        - main_product_type
+        - product_types
+        - analysis
         - origin
         - data_date
         - series
@@ -1436,6 +1734,29 @@ components:
           type: object
           title: Indicators
           description: Indicateurs bruts, clés de GET /report (`indicators`)
+        name_en:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Name En
+          description: Nom anglais (Data/IA seulement)
+        main_product_type:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Main Product Type
+          description: Type de produit principal (Data/IA seulement)
+        product_types:
+          items:
+            $ref: '#/components/schemas/ProductShareRead'
+          type: array
+          title: Product Types
+          description: Types de produits où l'arôme est présent ; vide en repli CSV
+        analysis:
+          anyOf:
+            - $ref: '#/components/schemas/TrendAnalysisRead'
+            - type: 'null'
+          description: Indicateurs métier Data/IA ; null en repli CSV
       type: object
       required:
         - id
@@ -1447,6 +1768,10 @@ components:
         - confidence
         - aisle
         - indicators
+        - name_en
+        - main_product_type
+        - product_types
+        - analysis
       title: TrendRead
       description: Un arôme. `status` et `score` sont null en repli CSV (aucun modèle).
     TrendReportRead:

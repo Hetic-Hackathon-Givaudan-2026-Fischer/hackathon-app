@@ -9,6 +9,7 @@ from app.api.deps import (
     get_database_probe,
     get_model_metrics_source,
     get_showroom_link_repository,
+    get_simulator,
     get_token_generator,
     get_trend_source,
 )
@@ -19,9 +20,12 @@ from tests.fakes import (
     FakeDataIssueRepository,
     FakeModelMetrics,
     FakeShowroomLinkRepository,
+    FakeSimulator,
     FakeTokenGenerator,
     FakeTrendSource,
     make_trend,
+    with_analysis,
+    with_product_types,
 )
 
 # Réglages explicites : en CI, ni api/.env ni DATABASE_URL
@@ -31,13 +35,15 @@ SETTINGS = Settings(
     public_web_url="http://web.test",
 )
 
+ACAI = make_trend(
+    "acai", "fruits", "buzz", 0.4, "Açaï", wiki_croissance_12m_relative=10.0
+)
+MANGO = make_trend(
+    "mango", "fruits", "emergent", 0.9, "Mangue", wiki_croissance_12m_relative=30.0
+)
 TRENDS = [
-    make_trend(
-        "acai", "fruits", "buzz", 0.4, "Açaï", wiki_croissance_12m_relative=10.0
-    ),
-    make_trend(
-        "mango", "fruits", "emergent", 0.9, "Mangue", wiki_croissance_12m_relative=30.0
-    ),
+    with_product_types(ACAI, "boissons", "glaces"),
+    with_analysis(MANGO, buzz_score=80),
     make_trend("cumin", "epice", None, None, "Cumin", produits_total=3.0),
 ]
 
@@ -64,6 +70,12 @@ def model_metrics() -> FakeModelMetrics:
 
 
 @pytest.fixture
+def simulator() -> FakeSimulator:
+    """Sans résultat : Data/IA coupée (ou non configurée)."""
+    return FakeSimulator()
+
+
+@pytest.fixture
 def issues() -> FakeDataIssueRepository:
     return FakeDataIssueRepository()
 
@@ -79,6 +91,7 @@ def client(
     trend_source: FakeTrendSource,
     data_ai: FakeTrendSource | None,
     model_metrics: FakeModelMetrics,
+    simulator: FakeSimulator,
     issues: FakeDataIssueRepository,
     links: FakeShowroomLinkRepository,
 ) -> Iterator[TestClient]:
@@ -90,6 +103,7 @@ def client(
         get_trend_source: lambda: trend_source,
         get_data_ai_trend_source: lambda: data_ai,
         get_model_metrics_source: lambda: model_metrics,
+        get_simulator: lambda: simulator,
         get_data_issue_repository: lambda: issues,
         get_showroom_link_repository: lambda: links,
         get_token_generator: FakeTokenGenerator,

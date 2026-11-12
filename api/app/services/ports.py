@@ -47,8 +47,50 @@ class Evidence:
 
     source: str
     published: date | None
-    title: str
-    url: str
+    title: str | None
+    url: str | None
+
+
+ProductBasis = Literal["produits", "famille"]
+AnalysisStatus = Literal[
+    "exploding",
+    "emerging",
+    "growing",
+    "seasonal",
+    "stable",
+    "declining",
+    "insufficient_data",
+]
+AnalysisConfidence = Literal["high", "medium", "low"]
+
+
+@dataclass(frozen=True, slots=True)
+class ProductShare:
+    """Un type de produit (rayon) où l'arôme est présent.
+
+    `basis` « famille » : aucun produit trouvé, type déduit de la famille ;
+    `share` est alors None.
+    """
+
+    id: str
+    label: str
+    products: int
+    share: float | None
+    basis: ProductBasis
+
+
+@dataclass(frozen=True, slots=True)
+class TrendAnalysis:
+    """Indicateurs métier calculés par Data/IA (sans LLM).
+
+    `buzz_score` / `trend_score` : rangs relatifs de 0 à 100 (bêta).
+    """
+
+    status: AnalysisStatus
+    reason: str
+    buzz_score: int | None
+    trend_score: int | None
+    confidence: AnalysisConfidence
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +113,10 @@ class TrendRecord:
     series: tuple[SeriesPoint, ...] = ()
     evidence: tuple[Evidence, ...] = ()
     watch_points: tuple[str, ...] = ()
+    name_en: str | None = None
+    main_product_type: str | None = None
+    product_types: tuple[ProductShare, ...] = ()
+    analysis: TrendAnalysis | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +183,39 @@ class ModelMetricsSource(Protocol):
     """Métriques du modèle ; lève DataSourceUnavailableError sans modèle joignable."""
 
     async def model_metrics(self) -> ModelMetrics: ...
+
+
+# --- Simulation de pérennité ----------------------------------------------------
+
+SimulationVerdict = Literal["durable", "buzz probable", "incertain"]
+
+
+@dataclass(frozen=True, slots=True)
+class SimulationInput:
+    """Variables d'un arôme en hausse, saisies à la main (calculatrice « et si »)."""
+
+    growth_13w: float
+    growth_52w: float | None
+    volatility_26w: float | None
+    spike_ratio: float | None
+    acceleration: float | None
+    popularity_vs_anchor: float | None
+    market_products_log: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class SimulationResult:
+    """Probabilité (0-1) que la hausse dure un an, selon le modèle V2."""
+
+    probability: float
+    verdict: SimulationVerdict
+    note: str
+
+
+class PerennitySimulator(Protocol):
+    """Modèle V2 ; lève DataSourceUnavailableError sans modèle joignable."""
+
+    async def simulate(self, inputs: SimulationInput) -> SimulationResult: ...
 
 
 # --- Traçabilité ------------------------------------------------------------------
