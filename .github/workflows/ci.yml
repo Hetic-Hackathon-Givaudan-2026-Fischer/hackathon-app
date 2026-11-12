@@ -16,6 +16,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      # Types du front générés depuis openapi.yaml (ADR 0012) : sinon, npm run gen:api
+      - run: npm run gen:api && git diff --exit-code web/src/api/schema.d.ts
       - run: npm run build
 
   # L'API FastAPI : Ruff (lint + format), contrat OpenAPI à jour. Tests : tests.yml

@@ -58,14 +58,19 @@ Architecture en couches ([ADR 0004](docs/adr/0004-backend-fastapi.md)) :
 
 React + Tailwind pour l'interface, three.js impératif pour la scène ([ADR 0007](docs/adr/0007-front-react.md)) :
 
-| Dossier         | Rôle                                                                      |
-| --------------- | ------------------------------------------------------------------------- |
-| `components/`   | Composants React, classes Tailwind ; jamais d'import de `three`.          |
-| `hooks/`        | `useExperience` : monte / libère le moteur, expose son état à React.      |
-| `engine/`       | Moteur three.js ; entrée unique `createExperience`, libéré par `dispose`. |
-| `engine/scene/` | Un dossier par élément de la scène, `index.ts` comme seule surface.       |
+| Dossier         | Rôle                                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| `components/`   | Composants React, classes Tailwind ; jamais d'import de `three`.                                              |
+| `hooks/`        | `useExperience` : monte / libère le moteur, expose son état à React.                                          |
+| `engine/`       | Moteur three.js ; entrée unique `createExperience`, libéré par `dispose`.                                     |
+| `engine/scene/` | Un dossier par élément de la scène, `index.ts` comme seule surface.                                           |
+| `api/`          | Seul accès réseau : client `openapi-fetch`, types générés ([ADR 0012](docs/adr/0012-types-front-openapi.md)). |
+| `immersive/`    | Lien rayon 3D → familles d'arômes, fiche affichée au scan.                                                    |
+| `lib/`          | Mise en forme partagée (nombres, dates, familles, origine des données).                                       |
 
 - Types partagés du moteur : `engine/types.ts` ; outils canvas : `engine/scene/shared/canvas.ts`.
+- Types de l'API : jamais écrits à la main. Après un changement de schéma Pydantic : `export_openapi`, puis `npm run gen:api` (contrôlé en CI).
+- L'app s'ouvre sur le dashboard ; la vue immersive ne s'ouvre que depuis lui. Seule autre URL : `/showroom/{jeton}` (vue client seule, testée dans `main.tsx`).
 - Jetons de la charte : `@theme` dans `index.css`, alignés sur `brand.ts`.
 
 ## Tests
@@ -95,6 +100,6 @@ uv run ruff format     # formatage
 uv run pytest          # tests
 ```
 
-À la racine : `npm run lint` (ESLint), `npm run format:check` (Prettier). Le hook pre-commit (husky + lint-staged) lance ESLint, Prettier et ruff sur les fichiers indexés.
+À la racine : `npm run lint` (ESLint), `npm run format:check` (Prettier), `npm run gen:api` (types du front depuis `openapi.yaml`). Le hook pre-commit (husky + lint-staged) lance ESLint, Prettier et ruff sur les fichiers indexés.
 
 Avant de rendre la main : `ruff check`, `ruff format` et `pytest` passent dans `api/`, `npm run lint` et `npm run format:check` à la racine.

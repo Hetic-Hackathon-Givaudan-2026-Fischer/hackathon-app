@@ -25,7 +25,7 @@ Option 3.
 | Moteur | [`web/src/engine/`](../../web/src/engine/)             | three.js impératif ; seul point d'entrée : `createExperience`.      |
 | Scène  | [`web/src/engine/scene/`](../../web/src/engine/scene/) | Un dossier par élément (`market`, `products`, `nature`, `scanner`). |
 
-Dépendances : `react`, `react-dom` 19 ; `tailwindcss` 4 (`@tailwindcss/vite`) ; `@vitejs/plugin-react` ; `three` 0.170 ; ESLint `react-hooks` et `react-refresh`.
+Dépendances : `react`, `react-dom` 19 ; `tailwindcss` 4 (`@tailwindcss/vite`) ; `@vitejs/plugin-react` ; `three` 0.170 ; ESLint `react-hooks` et `react-refresh`. Client d'API : `openapi-fetch` ([0012](0012-types-front-openapi.md)).
 
 Règles :
 

@@ -9,7 +9,11 @@ import { createMarket } from './scene/market';
 import { createNature } from './scene/nature';
 import { createGear } from './scene/scanner';
 import { createStage, HAND_LAYER, type Stage } from './stage';
-import type { Gear, Market } from './types';
+import type { Category, Gear, Market, ScanCard } from './types';
+
+// Contrats exposés à l'interface : seule surface du moteur avec createExperience
+export type { CategoryId } from './scene/products';
+export type { Category, ScanCard, ScanRow } from './types';
 
 /** Mélange de vue à partir duquel on considère la tablette « lue ». */
 const READING_BLEND = 0.4;
@@ -20,11 +24,15 @@ export interface ExperienceEvents {
   onPlayingChange(playing: boolean): void;
   /** Tablette levée devant les yeux : le viseur s'efface. */
   onReadingChange(reading: boolean): void;
+  /** Fiche d'une rubrique scannée, fournie par l'interface (données de l'API). */
+  describeCategory(category: Category): ScanCard;
 }
 
 export interface Experience {
   enter(): void;
   exit(): void;
+  /** Redemande la fiche du dernier rayon scanné (données arrivées depuis). */
+  refreshCard(): void;
   dispose(): void;
 }
 
@@ -72,7 +80,10 @@ function buildWorld(container: HTMLElement): World {
 }
 
 /** Clic en visite : range la tablette, ou scanne le produit visé. */
-function scan({ aim, focus, gear, market }: World) {
+function scan(
+  { aim, focus, gear, market }: World,
+  show: (category: Category) => void,
+) {
   if (focus.engaged) {
     focus.release();
     return;
@@ -85,7 +96,7 @@ function scan({ aim, focus, gear, market }: World) {
   const category = categoryOf(hit.object);
   if (!category) return;
   focus.begin();
-  gear.show(category.name, category.blurb);
+  show(category);
   gear.fire(aim.surfacePoint(market.group));
 }
 
@@ -129,10 +140,27 @@ function sessionHandlers(
   return { onLock, onUnlock };
 }
 
+/** Fiche de la tablette : se souvient du dernier rayon pour la redessiner. */
+function createCardDisplay(
+  gear: Gear,
+  describe: ExperienceEvents['describeCategory'],
+) {
+  let last: Category | null = null;
+  const show = (category: Category) => {
+    last = category;
+    gear.show(describe(category));
+  };
+  const refresh = () => {
+    if (last) gear.show(describe(last));
+  };
+  return { show, refresh };
+}
+
 function bindInput(
   world: World,
   events: ExperienceEvents,
   setReading: (v: boolean) => void,
+  show: (category: Category) => void,
 ) {
   const { controls } = world.walk;
   const { canvas } = world.stage;
@@ -141,7 +169,7 @@ function bindInput(
     if (!controls.isLocked) controls.lock();
   };
   const pick = (event: MouseEvent) => {
-    if (event.button === 0 && controls.isLocked) scan(world);
+    if (event.button === 0 && controls.isLocked) scan(world, show);
   };
   controls.addEventListener('lock', onLock);
   controls.addEventListener('unlock', onUnlock);
@@ -167,7 +195,8 @@ export function createExperience(
 ): Experience {
   const world = buildWorld(container);
   const setReading = onChange(events.onReadingChange);
-  const unbind = bindInput(world, events, setReading);
+  const card = createCardDisplay(world.gear, events.describeCategory);
+  const unbind = bindInput(world, events, setReading, card.show);
   const stopLoop = startLoop(createFrame(world, setReading));
   exposeForDebug(world.stage);
   const enter = () => {
@@ -182,5 +211,5 @@ export function createExperience(
     world.walk.dispose();
     world.stage.dispose();
   };
-  return { enter, exit, dispose };
+  return { enter, exit, refreshCard: card.refresh, dispose };
 }

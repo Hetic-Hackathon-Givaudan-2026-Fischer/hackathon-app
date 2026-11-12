@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write . '!db/data'",
     "format:check": "prettier --check . '!db/data'",
-    "prepare": "husky"
+    "prepare": "husky",
+    "gen:api": "openapi-typescript openapi.yaml -o web/src/api/schema.d.ts && prettier --write web/src/api/schema.d.ts"
   },
   "lint-staged": {
     "*.{ts,js,mjs}": [
@@ -35,6 +36,7 @@
     "globals": "^17.14.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.10",
     "typescript-eslint": "^8.72.1"
   }
