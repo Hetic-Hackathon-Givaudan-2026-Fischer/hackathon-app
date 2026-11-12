@@ -49,17 +49,7 @@ export const OPENINGS: readonly Opening[] = [
 ];
 
 /** Pupitre d'accueil, tourné vers l'entrée. */
-export const WELCOME_BOARD = { x: -4.96, z: 7.15, yaw: Math.PI / 4 } as const;
-
-/** Le point (x, z) tombe-t-il sur le magasin ou son parvis ? */
-export function coversMarket(x: number, z: number, pad = 0): boolean {
-  return (
-    x > STORE.minX - pad &&
-    x < STORE.maxX + pad &&
-    z > STORE.minZ - pad &&
-    z < STORE.maxZ + PLAZA + pad
-  );
-}
+export const WELCOME_BOARD = { x: -4.96, z: 8.15, yaw: Math.PI / 4 } as const;
 
 /** Élément d'une table constante ; une erreur signale un index hors bornes. */
 export function at<T>(items: readonly T[], index: number): T {

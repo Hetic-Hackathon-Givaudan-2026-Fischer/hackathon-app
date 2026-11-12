@@ -9,7 +9,8 @@ import { initiativeTexture } from './initiative';
 
 const BOARD_W = 2.75;
 const BOARD_L = 1.55;
-const TILT = Math.PI / 6;
+/** 80° par rapport au sol : 10° d'inclinaison depuis la verticale. */
+const TILT = (10 * Math.PI) / 180;
 const HALF = BOARD_L / 2;
 /** Recul et hauteur du demi-plateau incliné. */
 const REACH = HALF * Math.sin(TILT);

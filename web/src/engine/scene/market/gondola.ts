@@ -1,4 +1,4 @@
-// Gondole : fond en toile, montants, cinq étagères et têtes de gondole.
+// Gondole : fond en toile, montants, trois étagères et têtes de gondole.
 import * as THREE from 'three';
 import { menuColor } from '../../../brand';
 import type { Category } from '../../types';
@@ -17,15 +17,15 @@ export interface GondolaSpec {
   category: Category;
   capNorth: Cap;
   capSouth: Cap;
-  /** Rayon vedette : un produit mis en avant sur la 4e étagère. */
+  /** Rayon vedette : un produit mis en avant sur la 2e étagère. */
   hero: boolean;
 }
 
 const W = GONDOLA_LEN;
 const D = GONDOLA_DEPTH;
 const H = 2.08;
-const SHELF_YS = [0.26, 0.68, 1.1, 1.52, 1.9] as const;
-const FEATURE_SHELF = 3;
+const SHELF_YS = [0.72, 1.18, 1.64] as const;
+const FEATURE_SHELF = 1;
 
 const endCapMaterials = new Map<number, THREE.MeshStandardMaterial>();
 const accentMaterials = new Map<string, THREE.MeshStandardMaterial>();
@@ -67,7 +67,7 @@ function gondolaFrame(
   const left = box(metal, [0.05, H, D - 0.05], [-W / 2 + 0.025, H / 2, 0.02]);
   const right = left.clone();
   right.position.set(W / 2 - 0.025, H / 2, 0.02);
-  const stripe = box(accentMaterial(accent), [W, 0.03, 0.02], [0, 0.17, D / 2]);
+  const stripe = box(accentMaterial(accent), [W, 0.03, 0.02], [0, 0.66, D / 2]);
   const top = box(metal, [W - 0.08, 0.04, D - 0.05], [0, H, 0.015]);
   return [back, left, right, stripe, top];
 }
