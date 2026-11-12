@@ -42,6 +42,7 @@ Quel ADR lire avant de toucher à :
 | `api/app/`, dépendances Python, base     | [0004](0004-backend-fastapi.md) |
 | `security.yml`, secrets                  | [0005](0005-ci-securite.md)     |
 | `AGENTS.md`, `CLAUDE.md`, skills, ADR    | [0006](0006-cadre-agents-ia.md) |
+| `web/`, dépendances npm du front         | [0007](0007-front-react.md)     |
 
 Écarts entre le skill FastAPI et ce dépôt (l'ADR gagne) :
 
