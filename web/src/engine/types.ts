@@ -15,6 +15,24 @@ export interface Category {
   accent: number;
 }
 
+/** Une ligne de la fiche de scan : un arôme et ses données, déjà mises en forme. */
+export interface ScanRow {
+  label: string;
+  value: string;
+  detail: string | null;
+}
+
+/**
+ * Fiche affichée sur la tablette après un scan. Construite hors du moteur
+ * (données de l'API) : le moteur ne fait que la dessiner.
+ */
+export interface ScanCard {
+  title: string;
+  subtitle: string;
+  rows: readonly ScanRow[];
+  footnote: string | null;
+}
+
 /** Obstacle aligné sur les axes du monde (plan XZ). */
 export interface BoxCollider {
   minX: number;
@@ -52,7 +70,7 @@ export interface Gear {
   beam: THREE.Group;
   fire(point: THREE.Vector3): void;
   deny(): void;
-  show(name: string, blurb: string): void;
+  show(card: ScanCard): void;
   update(
     dt: number,
     time: number,

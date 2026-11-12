@@ -13,12 +13,16 @@ jobs:
     container: node:24-trixie
     steps:
       - uses: actions/checkout@v7
+      # Dans un conteneur, le dépôt appartient à un autre utilisateur : git le refuse sans ça
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      # Types du front générés depuis openapi.yaml (ADR 0012) : sinon, npm run gen:api
+      - run: npm run gen:api && git diff --exit-code web/src/api/schema.d.ts
       - run: npm run build
 
-  # L'API FastAPI : Ruff (lint + format). Les tests sont dans tests.yml
+  # L'API FastAPI : Ruff (lint + format), contrat OpenAPI à jour. Tests : tests.yml
   api:
     runs-on: ubuntu-latest
     # Même Python (3.13), même uv et même Debian que api/Dockerfile et le dev container
@@ -32,3 +36,5 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check
       - run: uv run ruff format --check
+      # openapi.yaml (racine) doit refléter le code : sinon, régénérer et commiter
+      - run: uv run python -m app.scripts.export_openapi --check

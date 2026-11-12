@@ -1,0 +1,499 @@
+{
+  "trend_id": "curry",
+  "aroma_name": "Curry",
+  "aroma_name_en": "Curry",
+  "family": "epice",
+  "category_3d_aisle": "Épicerie salée & sauces",
+  "status_label": "En hausse : probablement passager (buzz)",
+  "scores": {
+    "v1_rule_verdict": "buzz",
+    "v2_perennity_score": 13,
+    "mirofish_simulation_score": null,
+    "confidence_level": "haute"
+  },
+  "metrics": {
+    "search_growth_13w_pct": 27.0,
+    "search_growth_52w_pct": 55.5,
+    "search_volatility_26w": 0.594,
+    "search_spike_ratio": 3.82,
+    "popularity_vs_vanilla": null,
+    "wikipedia_growth_12m_relative_pts": 3.4,
+    "openfoodfacts_products_count": 361,
+    "openfoodfacts_brands": 226,
+    "openfoodfacts_countries": 42,
+    "press_mentions_30d": 22,
+    "social_mentions_30d": 195,
+    "youtube_views_30d": 50327,
+    "sponsored_share_30d": 0.014,
+    "efsa_regulatory_status": "non_verifie"
+  },
+  "series": {
+    "google_trends_world_weekly": [
+      {
+        "week": "2024-11-10",
+        "value": 20.0
+      },
+      {
+        "week": "2024-11-17",
+        "value": 20.0
+      },
+      {
+        "week": "2024-11-24",
+        "value": 17.0
+      },
+      {
+        "week": "2024-12-01",
+        "value": 18.0
+      },
+      {
+        "week": "2024-12-08",
+        "value": 17.0
+      },
+      {
+        "week": "2024-12-15",
+        "value": 17.0
+      },
+      {
+        "week": "2024-12-22",
+        "value": 20.0
+      },
+      {
+        "week": "2024-12-29",
+        "value": 21.0
+      },
+      {
+        "week": "2025-01-05",
+        "value": 20.0
+      },
+      {
+        "week": "2025-01-12",
+        "value": 20.0
+      },
+      {
+        "week": "2025-01-19",
+        "value": 19.0
+      },
+      {
+        "week": "2025-01-26",
+        "value": 20.0
+      },
+      {
+        "week": "2025-02-02",
+        "value": 21.0
+      },
+      {
+        "week": "2025-02-09",
+        "value": 19.0
+      },
+      {
+        "week": "2025-02-16",
+        "value": 20.0
+      },
+      {
+        "week": "2025-02-23",
+        "value": 21.0
+      },
+      {
+        "week": "2025-03-02",
+        "value": 22.0
+      },
+      {
+        "week": "2025-03-09",
+        "value": 22.0
+      },
+      {
+        "week": "2025-03-16",
+        "value": 21.0
+      },
+      {
+        "week": "2025-03-23",
+        "value": 20.0
+      },
+      {
+        "week": "2025-03-30",
+        "value": 21.0
+      },
+      {
+        "week": "2025-04-06",
+        "value": 19.0
+      },
+      {
+        "week": "2025-04-13",
+        "value": 19.0
+      },
+      {
+        "week": "2025-04-20",
+        "value": 19.0
+      },
+      {
+        "week": "2025-04-27",
+        "value": 21.0
+      },
+      {
+        "week": "2025-05-04",
+        "value": 26.0
+      },
+      {
+        "week": "2025-05-11",
+        "value": 22.0
+      },
+      {
+        "week": "2025-05-18",
+        "value": 17.0
+      },
+      {
+        "week": "2025-05-25",
+        "value": 15.0
+      },
+      {
+        "week": "2025-06-01",
+        "value": 17.0
+      },
+      {
+        "week": "2025-06-08",
+        "value": 16.0
+      },
+      {
+        "week": "2025-06-15",
+        "value": 15.0
+      },
+      {
+        "week": "2025-06-22",
+        "value": 16.0
+      },
+      {
+        "week": "2025-06-29",
+        "value": 16.0
+      },
+      {
+        "week": "2025-07-06",
+        "value": 16.0
+      },
+      {
+        "week": "2025-07-13",
+        "value": 17.0
+      },
+      {
+        "week": "2025-07-20",
+        "value": 17.0
+      },
+      {
+        "week": "2025-07-27",
+        "value": 17.0
+      },
+      {
+        "week": "2025-08-03",
+        "value": 18.0
+      },
+      {
+        "week": "2025-08-10",
+        "value": 17.0
+      },
+      {
+        "week": "2025-08-17",
+        "value": 17.0
+      },
+      {
+        "week": "2025-08-24",
+        "value": 17.0
+      },
+      {
+        "week": "2025-08-31",
+        "value": 17.0
+      },
+      {
+        "week": "2025-09-07",
+        "value": 18.0
+      },
+      {
+        "week": "2025-09-14",
+        "value": 17.0
+      },
+      {
+        "week": "2025-09-21",
+        "value": 17.0
+      },
+      {
+        "week": "2025-09-28",
+        "value": 19.0
+      },
+      {
+        "week": "2025-10-05",
+        "value": 21.0
+      },
+      {
+        "week": "2025-10-12",
+        "value": 21.0
+      },
+      {
+        "week": "2025-10-19",
+        "value": 24.0
+      },
+      {
+        "week": "2025-10-26",
+        "value": 20.0
+      },
+      {
+        "week": "2025-11-02",
+        "value": 20.0
+      },
+      {
+        "week": "2025-11-09",
+        "value": 24.0
+      },
+      {
+        "week": "2025-11-16",
+        "value": 23.0
+      },
+      {
+        "week": "2025-11-23",
+        "value": 21.0
+      },
+      {
+        "week": "2025-11-30",
+        "value": 23.0
+      },
+      {
+        "week": "2025-12-07",
+        "value": 21.0
+      },
+      {
+        "week": "2025-12-14",
+        "value": 21.0
+      },
+      {
+        "week": "2025-12-21",
+        "value": 21.0
+      },
+      {
+        "week": "2025-12-28",
+        "value": 23.0
+      },
+      {
+        "week": "2026-01-04",
+        "value": 24.0
+      },
+      {
+        "week": "2026-01-11",
+        "value": 24.0
+      },
+      {
+        "week": "2026-01-18",
+        "value": 22.0
+      },
+      {
+        "week": "2026-01-25",
+        "value": 24.0
+      },
+      {
+        "week": "2026-02-01",
+        "value": 28.0
+      },
+      {
+        "week": "2026-02-08",
+        "value": 39.0
+      },
+      {
+        "week": "2026-02-15",
+        "value": 49.0
+      },
+      {
+        "week": "2026-02-22",
+        "value": 31.0
+      },
+      {
+        "week": "2026-03-01",
+        "value": 19.0
+      },
+      {
+        "week": "2026-03-08",
+        "value": 20.0
+      },
+      {
+        "week": "2026-03-15",
+        "value": 22.0
+      },
+      {
+        "week": "2026-03-22",
+        "value": 25.0
+      },
+      {
+        "week": "2026-03-29",
+        "value": 25.0
+      },
+      {
+        "week": "2026-04-05",
+        "value": 27.0
+      },
+      {
+        "week": "2026-04-12",
+        "value": 25.0
+      },
+      {
+        "week": "2026-04-19",
+        "value": 22.0
+      },
+      {
+        "week": "2026-04-26",
+        "value": 20.0
+      },
+      {
+        "week": "2026-05-03",
+        "value": 21.0
+      },
+      {
+        "week": "2026-05-10",
+        "value": 23.0
+      },
+      {
+        "week": "2026-05-17",
+        "value": 23.0
+      },
+      {
+        "week": "2026-05-24",
+        "value": 23.0
+      },
+      {
+        "week": "2026-05-31",
+        "value": 26.0
+      },
+      {
+        "week": "2026-06-07",
+        "value": 25.0
+      },
+      {
+        "week": "2026-06-14",
+        "value": 26.0
+      },
+      {
+        "week": "2026-06-21",
+        "value": 24.0
+      },
+      {
+        "week": "2026-06-28",
+        "value": 17.0
+      },
+      {
+        "week": "2026-07-05",
+        "value": 18.0
+      },
+      {
+        "week": "2026-07-12",
+        "value": 18.0
+      },
+      {
+        "week": "2026-07-19",
+        "value": 20.0
+      },
+      {
+        "week": "2026-07-26",
+        "value": 27.0
+      },
+      {
+        "week": "2026-08-02",
+        "value": 30.0
+      },
+      {
+        "week": "2026-08-09",
+        "value": 26.0
+      },
+      {
+        "week": "2026-08-16",
+        "value": 22.0
+      },
+      {
+        "week": "2026-08-23",
+        "value": 100.0
+      },
+      {
+        "week": "2026-08-30",
+        "value": 37.0
+      },
+      {
+        "week": "2026-09-06",
+        "value": 29.0
+      },
+      {
+        "week": "2026-09-13",
+        "value": 32.0
+      },
+      {
+        "week": "2026-09-20",
+        "value": 22.0
+      },
+      {
+        "week": "2026-09-27",
+        "value": 18.0
+      },
+      {
+        "week": "2026-10-04",
+        "value": 18.0
+      },
+      {
+        "week": "2026-10-11",
+        "value": 17.0
+      },
+      {
+        "week": "2026-10-18",
+        "value": 19.0
+      },
+      {
+        "week": "2026-10-25",
+        "value": 20.0
+      },
+      {
+        "week": "2026-11-01",
+        "value": 21.0
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "source": "google_news",
+      "date": "2026-11-12",
+      "title": "Weston-super-Mare curry house owner recognised for tackling major issue",
+      "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNeWtCLXl3cDByWDVEN2NjT1dJOE1XVTNaNUhFM0ppTi0tbUpTUVdlYUd3TE9laXNSZVhFSlVfaDQtWkJ1X0YydUtyVEhqSUVocllVSk5zNy0tUTB4THlQOWxGRG84SHp0UFpkOHhXcV9Ia2piLThVbHNqTEs3M0VBXzFxSTlCZ3ZOem9aV285emlFenlYVHVTbHA2Uy1kSFhIcEM1a09R?oc=5"
+    },
+    {
+      "source": "google_news",
+      "date": "2026-11-12",
+      "title": "Warriors’ Stephen Curry exits early with abdominal soreness, ruled out vs Rockets",
+      "url": "https://news.google.com/rss/articles/CBMijwJBVV95cUxNZlNGSzZIam5LdEJZR3hRekNWY0VRWHJRUHlfM2l4Si1nd002Z09Pc1BHYUhPZ19kZUhnQzJEMlM4VldCMkJiT25lYVJWZUtIZ2xRWUViOUcxV2I4TVk4RkY5WmFvY2ZTaDJibjBIVy1uS3VvTmxTRmN5ZDFzb0pFQ0ozakxEdUJEN3dacE15MzZqaGlsdXZqWG1IQkVXYTJVTFkyVUJ4T25XejZjVlBWN1ItbTUwaFQ2Q1pNYkFmblphYVJEVjNqRGlsN05lVGx4T1dVekt2WjQ3WGVPRDQwZi1yQnZsSzBZWlpPaWFzaDNOTk9WcHUtcUtqSlF2WXBLVkRicTRlWjVnUlE0S0hJ?oc=5"
+    },
+    {
+      "source": "google_news",
+      "date": "2026-11-11",
+      "title": "Glasgow restaurant creates 'curry in a pie' for Aldi stores across Scotland",
+      "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQWnluZVJ1eENwNHQ0NWt6azZTOC1yQWpVOVV5dlBqUTFHeUpLaC02Y3QzWmlXRVhWRTFKWVBCZmZINGkxNGI1RmRsaDlxbUFTVFNTSW5kQ1RhZXMzOVJjTUt6LTl2Y0twWVU3TWswU2FXNy1hdWhLYVJySFBJb1hLRjFsVVRGdDRJd0lKMi1OMWpwMWV2bHlhaTV3SGFLN1XSAaQBQVVfeXFMT1pqTThUTW1heVBmTlZJYzZaNmFLT3p6Zk9LY01JNE1waHh2akR3VVJnZUxzRGlQTVFBSlh0bXNrVnVVRy05b2JXQ1E1eGMxbkw1SE5YRmI3VmpLdG8waC1qWmswSV9hcWRQYnduSmtnNjZJZmhWYUgzMXVsSjNNLW1hQm15cFJGRXBpUFFRYzVxVjJjRU43Z3ZZVW1sdnFDQWpDNUY?oc=5"
+    },
+    {
+      "source": "google_news",
+      "date": "2026-11-11",
+      "title": "LEON UNVEILS CHRISTMAS 2026 MENU WITH FESTIVE WRAP, SANDO CLAUS AND RETURNING CHRISTMAS PARTY CURRY!",
+      "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNMVU4dFY2WHc5QUZ6TUhrdmdWeGVYc2k3MFJfUURMWGlNTkxkQV9VWGtmRUNoTDJNTFJkRTBQUURhMy1CUW93Rkp5XzM1eGI0SkF3S3dmWll4ZHJkekpZS3ZhV3JpT3dkVklrN1hnc3hYRV94dFpYNGhYdVdsUGJUY0E5LTVzRVgwdlI1UmFMaGdQT0xsNjFPQ3dvdVpCUHVBV0JJRmotSXJhZFdMU0xSSF9IRkhFM2tsbGo1QXc0UVFIUDFfcVE?oc=5"
+    },
+    {
+      "source": "google_news",
+      "date": "2026-11-11",
+      "title": "Glasgow Indian restaurant teams up with popular bakery to launch new curry pies",
+      "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQZDZtcTRHdW1jQzZNQlV4blRnQ3ZadXhWUzFzVkxsU1Rub3pxM0gyMUVLajFGNHlYQUJJX3RpbkFjQ2ZNVEpmaFI0RkVLczI3UnEtRndwcVp5dXNhR2dqQkJ2WERNVUVGUW5YX2EwbFlKOW1ZTW9rb3V1c3hTb1owai1JVkNTaXlIRURfdFRuOVlGYmlCaDlReQ?oc=5"
+    },
+    {
+      "source": "youtube",
+      "date": "2026-11-10",
+      "title": "Singapore Noodles The Takeaway Classic",
+      "url": null
+    }
+  ],
+  "watch_points": [
+    "Courbe de recherche irrégulière (volatilité 0.59) : risque d'effet de mode.",
+    "Pic récent marqué (pic = 3.8 × la moyenne) : forme typique d'un buzz.",
+    "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+  ],
+  "mirofish": {
+    "status": "fiche_prete",
+    "packet": "data/sample/mirofish_packets/curry.md",
+    "simulation": null
+  },
+  "data_origin": "reel"
+}

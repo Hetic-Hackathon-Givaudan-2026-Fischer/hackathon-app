@@ -1,19 +1,24 @@
 openapi: 3.1.0
 info:
   title: API Hackathon
-  description: |
-    Questions posées à l'IA et réponses enregistrées dans PostgreSQL.
-
-    L'IA est choisie dans `api/.env` : un fournisseur compatible OpenAI (mode 1),
-    ou l'API de l'équipe Data/IA dès que `DATA_AI_URL` est renseignée (mode 2).
+  description:
+    "\nInterface interne Givaudan : tendances d'arômes, rapport d'analyse, showroom.\n\
+    \n- **Tendances** : lues dans l'API Data/IA (`DATA_AI_URL`), ou dans le CSV de\n  repli\
+    \ quand elle est vide ou injoignable. Chaque réponse porte `origin`\n  (`data_ai` | `csv_fallback`)\
+    \ et `data_date`.\n- **Rapport** : provenance, traitements et qualité des données ; signalements.\n\
+    - **Showroom** : liens temporaires, sans compte, en lecture seule.\n\nChaque réponse porte\
+    \ un en-tête `X-Request-ID`, à communiquer au support.\n"
   version: 1.0.0
 paths:
   /api/v1/health:
     get:
       tags:
         - santé
-      summary: État de l'API et de la base
-      description: 'Utilisé par le healthcheck Docker : sain = API démarrée ET base joignable.'
+      summary: État de l'API, de la base et de l'API Data/IA
+      description: "Healthcheck Docker : sain = API démarrée ET base joignable.
+
+
+        `data_ai` est informatif : Data/IA coupée ne rend pas l'API « unhealthy »."
       operationId: read_health_api_v1_health_get
       responses:
         '200':
@@ -23,39 +28,270 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthRead'
         '503':
-          description: Service Unavailable
+          description: Base ou source de données injoignable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorRead'
-  /api/v1/questions:
+  /api/v1/families:
     get:
       tags:
-        - questions
-      summary: Dernières questions posées
-      description: Les 10 dernières questions et leurs réponses, la plus récente en premier.
-      operationId: list_questions_api_v1_questions_get
+        - dashboard
+      summary: Familles d'arômes
+      description: Chaque famille, son nombre d'arômes et sa croissance moyenne sur 3 mois.
+      operationId: list_families_api_v1_families_get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/QuestionRead'
-                type: array
-                title: Response List Questions Api V1 Questions Get
+                $ref: '#/components/schemas/FamilyListRead'
+  /api/v1/dashboard/summary:
+    get:
+      tags:
+        - dashboard
+      summary: KPI du dashboard
+      description:
+        Calculés par l'API, identiques que les données viennent de Data/IA ou du
+        CSV.
+      operationId: read_summary_api_v1_dashboard_summary_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummaryRead'
+  /api/v1/trends:
+    get:
+      tags:
+        - tendances
+      summary: Arômes filtrés, triés et paginés
+      description:
+        'Filtres famille, statut et recherche (nom ou identifiant, sans accents).
+
+
+        Les valeurs absentes sont triées en dernier. En repli CSV, `status` et
+
+        `score` sont null : filtrer par statut ne renvoie alors rien.'
+      operationId: list_trends_api_v1_trends_get
+      parameters:
+        - name: family
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                maxLength: 100
+              - type: 'null'
+            title: Family
+        - name: status
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                maxLength: 100
+              - type: 'null'
+            description: Libellé exact du statut
+            title: Status
+          description: Libellé exact du statut
+        - name: search
+          in: query
+          required: false
+          schema:
+            anyOf:
+              - type: string
+                maxLength: 100
+              - type: 'null'
+            title: Search
+        - name: sort
+          in: query
+          required: false
+          schema:
+            enum:
+              - name
+              - score
+              - recherche_croissance_13s_pct
+              - recherche_croissance_52s_pct
+              - recherche_volatilite_26s
+              - recherche_pic_ratio
+              - popularite_vs_vanille
+              - wiki_vues_30j
+              - wiki_croissance_3m_pct
+              - wiki_croissance_12m_pct
+              - wiki_croissance_3m_relative
+              - wiki_croissance_12m_relative
+              - wiki_volatilite_26s
+              - produits_total
+              - produits_nouveaux_12m
+              - produits_croissance_12m_pct
+              - marques_distinctes
+              - pays_distincts
+              - mentions_presse_30j
+              - mentions_reseaux_30j
+              - youtube_vues_30j
+              - likes_30j
+              - part_sponsorise_30j
+              - pinterest_tendances_30j
+            type: string
+            default: wiki_croissance_12m_relative
+            title: Sort
+        - name: order
+          in: query
+          required: false
+          schema:
+            enum:
+              - asc
+              - desc
+            type: string
+            default: desc
+            title: Order
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            title: Page
+        - name: page_size
+          in: query
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            minimum: 1
+            default: 20
+            title: Page Size
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendListRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/trends/{trend_id}:
+    get:
+      tags:
+        - tendances
+      summary: Fiche d'un arôme
+      description: Indicateurs, verdict du modèle et série temporelle (Data/IA seulement).
+      operationId: read_trend_api_v1_trends__trend_id__get
+      parameters:
+        - name: trend_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+            description: Identifiant de l'arôme
+            title: Trend Id
+          description: Identifiant de l'arôme
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendDetailRead'
+        '404':
+          description: Ressource inconnue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/report:
+    get:
+      tags:
+        - rapport
+      summary: Provenance et qualité du jeu de données
+      description: Origine, date, sources des indicateurs, traitements, qualité calculée.
+      operationId: read_dataset_report_api_v1_report_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetReportRead'
+  /api/v1/report/trends/{trend_id}:
+    get:
+      tags:
+        - rapport
+      summary: Provenance et qualité d'un arôme
+      description: Chaque indicateur de l'arôme, sa source, sa valeur ; qualité par source.
+      operationId: read_trend_report_api_v1_report_trends__trend_id__get
+      parameters:
+        - name: trend_id
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+            description: Identifiant de l'arôme
+            title: Trend Id
+          description: Identifiant de l'arôme
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendReportRead'
+        '404':
+          description: Ressource inconnue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/report/model:
+    get:
+      tags:
+        - rapport
+      summary: Métriques du modèle V1 / V2
+      description:
+        'F1 et matrice de confusion ; `available: false` en repli CSV (jamais de
+        5xx).'
+      operationId: read_model_report_api_v1_report_model_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelReportRead'
+  /api/v1/report/issues:
     post:
       tags:
-        - questions
-      summary: Poser une question à l'IA
-      description: Envoie la question à l'IA (mode 1 ou 2 selon api/.env), enregistre l'échange.
-      operationId: create_question_api_v1_questions_post
+        - rapport
+      summary: Signaler un problème de données
+      description: Enregistre le message, l'origine des données et le `request_id` de l'appel.
+      operationId: create_issue_api_v1_report_issues_post
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuestionCreate'
+              $ref: '#/components/schemas/DataIssueCreate'
         required: true
       responses:
         '201':
@@ -63,9 +299,151 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QuestionRead'
-        '502':
-          description: Bad Gateway
+                $ref: '#/components/schemas/DataIssueRead'
+        '404':
+          description: Ressource inconnue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '503':
+          description: Base ou source de données injoignable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/showroom/links:
+    get:
+      tags:
+        - showroom
+      summary: Liens showroom
+      description: Tous les liens, le plus récent en premier, avec leur état ; sans jeton.
+      operationId: list_links_api_v1_showroom_links_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ShowroomLinkRead'
+                type: array
+                title: Response List Links Api V1 Showroom Links Get
+        '503':
+          description: Base ou source de données injoignable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+    post:
+      tags:
+        - showroom
+      summary: Créer un lien showroom
+      description: Le jeton et l'URL ne sont renvoyés qu'ici, une seule fois.
+      operationId: create_link_api_v1_showroom_links_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShowroomLinkCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShowroomLinkCreatedRead'
+        '503':
+          description: Base ou source de données injoignable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/showroom/links/{link_id}:
+    delete:
+      tags:
+        - showroom
+      summary: Révoquer un lien showroom
+      description: Le lien répond ensuite `410` ; révoquer deux fois ne change rien.
+      operationId: revoke_link_api_v1_showroom_links__link_id__delete
+      parameters:
+        - name: link_id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            title: Link Id
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Ressource inconnue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '503':
+          description: Base ou source de données injoignable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/showroom/{token}:
+    get:
+      tags:
+        - showroom
+      summary: Vue client d'un lien showroom
+      description: 'Lecture seule : les arômes du périmètre du lien, ni dashboard ni rapport.'
+      operationId: read_showroom_api_v1_showroom__token__get
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+            title: Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShowroomRead'
+        '404':
+          description: Ressource inconnue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '410':
+          description: Lien showroom expiré ou révoqué
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorRead'
+        '503':
+          description: Base ou source de données injoignable
           content:
             application/json:
               schema:
@@ -78,6 +456,254 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    ConfusionMatrixRead:
+      properties:
+        perennial_predicted_perennial:
+          type: integer
+          title: Perennial Predicted Perennial
+        perennial_predicted_buzz:
+          type: integer
+          title: Perennial Predicted Buzz
+        buzz_predicted_perennial:
+          type: integer
+          title: Buzz Predicted Perennial
+        buzz_predicted_buzz:
+          type: integer
+          title: Buzz Predicted Buzz
+      type: object
+      required:
+        - perennial_predicted_perennial
+        - perennial_predicted_buzz
+        - buzz_predicted_perennial
+        - buzz_predicted_buzz
+      title: ConfusionMatrixRead
+      description: Cas réels (pérenne / buzz) croisés avec la prédiction du modèle.
+    DashboardSummaryRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        trend_count:
+          type: integer
+          title: Trend Count
+        family_count:
+          type: integer
+          title: Family Count
+        scored_count:
+          type: integer
+          title: Scored Count
+          description: Arômes avec un statut (0 en repli CSV)
+        status_counts:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Status Counts
+        totals:
+          additionalProperties:
+            type: number
+          type: object
+          title: Totals
+        top_growing:
+          items:
+            $ref: '#/components/schemas/TrendRead'
+          type: array
+          title: Top Growing
+      type: object
+      required:
+        - origin
+        - data_date
+        - trend_count
+        - family_count
+        - scored_count
+        - status_counts
+        - totals
+        - top_growing
+      title: DashboardSummaryRead
+      description: KPI du dashboard, calculés par l'API quelle que soit l'origine.
+    DataIssueCreate:
+      properties:
+        trend_id:
+          anyOf:
+            - type: string
+              maxLength: 100
+            - type: 'null'
+          title: Trend Id
+          description: 'Arôme concerné ; absent : le rapport global'
+        message:
+          type: string
+          maxLength: 2000
+          minLength: 1
+          title: Message
+          examples:
+            - Les vues Wikipédia de l'açaï sont à 0.
+        contact:
+          anyOf:
+            - type: string
+              format: email
+            - type: 'null'
+          title: Contact
+          description: Pour vous recontacter
+      type: object
+      required:
+        - message
+      title: DataIssueCreate
+      description: Corps de POST /report/issues.
+    DataIssueRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        trend_id:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Trend Id
+        message:
+          type: string
+          title: Message
+        contact:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Contact
+        request_id:
+          type: string
+          title: Request Id
+          description: À communiquer au support
+        data_origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Data Origin
+          description: Origine des données au signalement
+        status:
+          type: string
+          enum:
+            - open
+            - in_progress
+            - resolved
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+        - id
+        - trend_id
+        - message
+        - contact
+        - request_id
+        - data_origin
+        - status
+        - created_at
+      title: DataIssueRead
+    DataProvenanceRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données
+        fetched_at:
+          type: string
+          format: date-time
+          title: Fetched At
+          description: Date de récupération par notre API
+        api_version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Api Version
+          description: Version de l'API Data/IA
+        model_applied:
+          type: boolean
+          title: Model Applied
+          description: 'false en repli CSV : indicateurs bruts'
+      type: object
+      required:
+        - origin
+        - data_date
+        - fetched_at
+        - api_version
+        - model_applied
+      title: DataProvenanceRead
+    DatasetReportRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        status:
+          type: string
+          enum:
+            - ok
+            - warning
+            - error
+          title: Status
+          description: Statut global, calculé
+        trend_count:
+          type: integer
+          title: Trend Count
+        provenance:
+          $ref: '#/components/schemas/DataProvenanceRead'
+        indicators:
+          items:
+            $ref: '#/components/schemas/IndicatorSourceRead'
+          type: array
+          title: Indicators
+        steps:
+          items:
+            $ref: '#/components/schemas/ProcessingStepRead'
+          type: array
+          title: Steps
+        quality:
+          items:
+            $ref: '#/components/schemas/QualityMetricRead'
+          type: array
+          title: Quality
+      type: object
+      required:
+        - origin
+        - data_date
+        - status
+        - trend_count
+        - provenance
+        - indicators
+        - steps
+        - quality
+      title: DatasetReportRead
+      description: Provenance et qualité de tout le jeu de données.
     ErrorRead:
       properties:
         detail:
@@ -88,6 +714,77 @@ components:
         - detail
       title: ErrorRead
       description: Format des erreurs renvoyées par l'API (le même que celui de FastAPI).
+    EvidenceRead:
+      properties:
+        source:
+          type: string
+          title: Source
+        published:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Published
+        title:
+          type: string
+          title: Title
+        url:
+          type: string
+          title: Url
+      type: object
+      required:
+        - source
+        - published
+        - title
+        - url
+      title: EvidenceRead
+    FamilyListRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        items:
+          items:
+            $ref: '#/components/schemas/FamilyRead'
+          type: array
+          title: Items
+      type: object
+      required:
+        - origin
+        - data_date
+        - items
+      title: FamilyListRead
+    FamilyRead:
+      properties:
+        family:
+          type: string
+          title: Family
+        trend_count:
+          type: integer
+          title: Trend Count
+        average_growth:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Average Growth
+          description: Moyenne de `wiki_croissance_12m_relative` sur la famille
+      type: object
+      required:
+        - family
+        - trend_count
+        - average_growth
+      title: FamilyRead
     HTTPValidationError:
       properties:
         detail:
@@ -108,51 +805,698 @@ components:
           type: string
           title: Db
           description: Version du serveur PostgreSQL
+        data_ai:
+          type: string
+          enum:
+            - up
+            - down
+            - non_configuree
+          title: Data Ai
+          description: API Data/IA ; `down` ne rend pas l'API « unhealthy » (repli CSV)
       type: object
       required:
         - db
+        - data_ai
       title: HealthRead
-      description: API démarrée et base joignable.
-    QuestionCreate:
+      description: API démarrée et base joignable. L'état Data/IA est informatif seulement.
+    IndicatorSourceRead:
       properties:
-        question:
+        key:
           type: string
-          maxLength: 4000
-          minLength: 1
-          title: Question
-          examples:
-            - Quelle est la capitale de la France ?
+          title: Key
+        label:
+          type: string
+          title: Label
+        source:
+          $ref: '#/components/schemas/Source'
+        source_label:
+          type: string
+          title: Source Label
+        period:
+          type: string
+          title: Period
+        value:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Value
+          description: Valeur pour l'arôme (rapport par arôme seulement)
       type: object
       required:
-        - question
-      title: QuestionCreate
-      description: Corps de POST /questions.
-    QuestionRead:
+        - key
+        - label
+        - source
+        - source_label
+        - period
+      title: IndicatorSourceRead
+    ModelReportRead:
+      properties:
+        available:
+          type: boolean
+          title: Available
+        reason:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Reason
+          description: Pourquoi les métriques manquent
+        validation:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Validation
+          description: Méthode de validation du modèle
+        label_rule:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Label Rule
+          description: Définition d'un buzz / d'un pérenne
+        interpretation:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Interpretation
+          description: Comment lire ces métriques
+        case_count:
+          anyOf:
+            - type: integer
+            - type: 'null'
+          title: Case Count
+          description: Nombre de cas de validation
+        features:
+          items:
+            type: string
+          type: array
+          title: Features
+          description: Variables du modèle
+        models:
+          items:
+            $ref: '#/components/schemas/ModelScoreRead'
+          type: array
+          title: Models
+      type: object
+      required:
+        - available
+        - reason
+        - validation
+        - label_rule
+        - interpretation
+        - case_count
+        - features
+        - models
+      title: ModelReportRead
+      description: 'Validation du modèle V2 et de ses références ; `available: false` en repli.'
+    ModelScoreRead:
+      properties:
+        version:
+          type: string
+          title: Version
+        description:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Description
+        accuracy:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Accuracy
+        balanced_accuracy:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Balanced Accuracy
+          description: Métrique à lire en premier
+        buzz_detected:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Buzz Detected
+          description: Part des vrais buzz repérés
+        f1:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: F1
+          description: F1 de la classe pérenne (modèle seulement)
+        roc_auc:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Roc Auc
+        confusion:
+          anyOf:
+            - $ref: '#/components/schemas/ConfusionMatrixRead'
+            - type: 'null'
+      type: object
+      required:
+        - version
+        - description
+        - accuracy
+        - balanced_accuracy
+        - buzz_detected
+        - f1
+        - roc_auc
+        - confusion
+      title: ModelScoreRead
+      description: Le modèle V2 ou une référence (V1, « toujours pérenne »).
+    ProcessingStepRead:
+      properties:
+        order:
+          type: integer
+          title: Order
+        name:
+          type: string
+          title: Name
+        version:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Version
+        description:
+          type: string
+          title: Description
+      type: object
+      required:
+        - order
+        - name
+        - version
+        - description
+      title: ProcessingStepRead
+    QualityMetricRead:
+      properties:
+        key:
+          type: string
+          title: Key
+        label:
+          type: string
+          title: Label
+        value:
+          type: number
+          title: Value
+          description: Part de 0 à 1
+        threshold:
+          type: number
+          title: Threshold
+          description: Seuil d'alerte (warning au-delà)
+        status:
+          type: string
+          enum:
+            - ok
+            - warning
+            - error
+          title: Status
+      type: object
+      required:
+        - key
+        - label
+        - value
+        - threshold
+        - status
+      title: QualityMetricRead
+    SeriesPointRead:
+      properties:
+        period:
+          type: string
+          format: date
+          title: Period
+        value:
+          type: number
+          title: Value
+      type: object
+      required:
+        - period
+        - value
+      title: SeriesPointRead
+    ShowroomLinkCreate:
+      properties:
+        client_label:
+          type: string
+          maxLength: 200
+          minLength: 1
+          title: Client Label
+          examples:
+            - Nestlé — équipe desserts
+        families:
+          items:
+            type: string
+            maxLength: 100
+            minLength: 1
+          type: array
+          maxItems: 50
+          title: Families
+          description: "Familles d'arômes visibles ; vide : toutes"
+        ttl_hours:
+          anyOf:
+            - type: integer
+              maximum: 720.0
+              minimum: 1.0
+            - type: 'null'
+          title: Ttl Hours
+          description: 'Durée de vie ; absent : SHOWROOM_LINK_TTL_HOURS'
+      type: object
+      required:
+        - client_label
+      title: ShowroomLinkCreate
+      description: Corps de POST /showroom/links.
+    ShowroomLinkCreatedRead:
       properties:
         id:
           type: integer
           title: Id
-        question:
+        client_label:
           type: string
-          title: Question
-        answer:
+          title: Client Label
+        families:
+          items:
+            type: string
+          type: array
+          title: Families
+        expires_at:
           type: string
-          title: Answer
+          format: date-time
+          title: Expires At
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Revoked At
         created_at:
           type: string
           format: date-time
           title: Created At
+        state:
+          type: string
+          enum:
+            - active
+            - expired
+            - revoked
+          title: State
+        token:
+          type: string
+          title: Token
+        url:
+          type: string
+          title: Url
       type: object
       required:
         - id
-        - question
-        - answer
+        - client_label
+        - families
+        - expires_at
+        - revoked_at
         - created_at
-      title: QuestionRead
-      description: |
-        Une question et la réponse de l'IA, telles qu'enregistrées.
-
-        from_attributes : construit depuis le QuestionRecord renvoyé par le service.
+        - state
+        - token
+        - url
+      title: ShowroomLinkCreatedRead
+      description: "Réponse de création : le jeton et l'URL ne seront plus jamais renvoyés."
+    ShowroomLinkRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        client_label:
+          type: string
+          title: Client Label
+        families:
+          items:
+            type: string
+          type: array
+          title: Families
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        revoked_at:
+          anyOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+          title: Revoked At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        state:
+          type: string
+          enum:
+            - active
+            - expired
+            - revoked
+          title: State
+      type: object
+      required:
+        - id
+        - client_label
+        - families
+        - expires_at
+        - revoked_at
+        - created_at
+        - state
+      title: ShowroomLinkRead
+      description: Un lien showroom, sans son jeton (montré une seule fois, à la création).
+    ShowroomRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        client_label:
+          type: string
+          title: Client Label
+        expires_at:
+          type: string
+          format: date-time
+          title: Expires At
+        families:
+          items:
+            type: string
+          type: array
+          title: Families
+        trends:
+          items:
+            $ref: '#/components/schemas/ShowroomTrendRead'
+          type: array
+          title: Trends
+      type: object
+      required:
+        - origin
+        - data_date
+        - client_label
+        - expires_at
+        - families
+        - trends
+      title: ShowroomRead
+      description: Vue client d'un lien showroom, en lecture seule.
+    ShowroomTrendRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        family:
+          type: string
+          title: Family
+        aisle:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Aisle
+          description: Rayon du magasin 3D
+        status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Status
+        score:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Score
+      type: object
+      required:
+        - id
+        - name
+        - family
+        - aisle
+        - status
+        - score
+      title: ShowroomTrendRead
+      description: "Ce que la vue immersive affiche d'un arôme : rien du rapport interne."
+    Source:
+      type: string
+      enum:
+        - google_trends
+        - wikipedia
+        - open_food_facts
+        - presse
+        - reseaux_sociaux
+        - pinterest
+      title: Source
+      description: Source d'origine d'un indicateur.
+    TrendDetailRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        family:
+          type: string
+          title: Family
+        status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Status
+          description: Libellé du statut calculé par Data/IA
+        score:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Score
+          description: Score de pérennité du modèle V2, de 0 à 100 (souvent null)
+        v1_verdict:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: V1 Verdict
+          description: Verdict de la règle V1 (`buzz`…)
+        confidence:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Confidence
+          description: Niveau de confiance Data/IA
+        aisle:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Aisle
+          description: Rayon du magasin 3D
+        indicators:
+          additionalProperties:
+            anyOf:
+              - type: number
+              - type: 'null'
+          type: object
+          title: Indicators
+          description: Indicateurs bruts, clés de GET /report (`indicators`)
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        series:
+          items:
+            $ref: '#/components/schemas/SeriesPointRead'
+          type: array
+          title: Series
+          description: Recherches Google mondiales, par semaine
+        evidence:
+          items:
+            $ref: '#/components/schemas/EvidenceRead'
+          type: array
+          title: Evidence
+          description: Sources citées (presse…)
+        watch_points:
+          items:
+            type: string
+          type: array
+          title: Watch Points
+          description: Points de vigilance
+      type: object
+      required:
+        - id
+        - name
+        - family
+        - status
+        - score
+        - v1_verdict
+        - confidence
+        - aisle
+        - indicators
+        - origin
+        - data_date
+        - series
+        - evidence
+        - watch_points
+      title: TrendDetailRead
+      description: 'Fiche complète ; série, preuves et points de vigilance : Data/IA seulement.'
+    TrendListRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        items:
+          items:
+            $ref: '#/components/schemas/TrendRead'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        page_size:
+          type: integer
+          title: Page Size
+      type: object
+      required:
+        - origin
+        - data_date
+        - items
+        - total
+        - page
+        - page_size
+      title: TrendListRead
+    TrendRead:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        family:
+          type: string
+          title: Family
+        status:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Status
+          description: Libellé du statut calculé par Data/IA
+        score:
+          anyOf:
+            - type: number
+            - type: 'null'
+          title: Score
+          description: Score de pérennité du modèle V2, de 0 à 100 (souvent null)
+        v1_verdict:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: V1 Verdict
+          description: Verdict de la règle V1 (`buzz`…)
+        confidence:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Confidence
+          description: Niveau de confiance Data/IA
+        aisle:
+          anyOf:
+            - type: string
+            - type: 'null'
+          title: Aisle
+          description: Rayon du magasin 3D
+        indicators:
+          additionalProperties:
+            anyOf:
+              - type: number
+              - type: 'null'
+          type: object
+          title: Indicators
+          description: Indicateurs bruts, clés de GET /report (`indicators`)
+      type: object
+      required:
+        - id
+        - name
+        - family
+        - status
+        - score
+        - v1_verdict
+        - confidence
+        - aisle
+        - indicators
+      title: TrendRead
+      description: Un arôme. `status` et `score` sont null en repli CSV (aucun modèle).
+    TrendReportRead:
+      properties:
+        origin:
+          type: string
+          enum:
+            - data_ai
+            - csv_fallback
+          title: Origin
+          description: '`data_ai` : API Data/IA ; `csv_fallback` : CSV, sans modèle'
+        data_date:
+          anyOf:
+            - type: string
+              format: date
+            - type: 'null'
+          title: Data Date
+          description: Date des données servies
+        status:
+          type: string
+          enum:
+            - ok
+            - warning
+            - error
+          title: Status
+        provenance:
+          $ref: '#/components/schemas/DataProvenanceRead'
+        trend:
+          $ref: '#/components/schemas/TrendRead'
+        indicators:
+          items:
+            $ref: '#/components/schemas/IndicatorSourceRead'
+          type: array
+          title: Indicators
+        quality:
+          items:
+            $ref: '#/components/schemas/QualityMetricRead'
+          type: array
+          title: Quality
+      type: object
+      required:
+        - origin
+        - data_date
+        - status
+        - provenance
+        - trend
+        - indicators
+        - quality
+      title: TrendReportRead
+      description: Provenance et qualité d'un arôme, indicateur par indicateur.
     ValidationError:
       properties:
         loc:
@@ -181,6 +1525,12 @@ components:
       title: ValidationError
 tags:
   - name: santé
-    description: Healthcheck de l'API et de la base.
-  - name: questions
-    description: Poser une question, relire l'historique.
+    description: Healthcheck de l'API, de la base et de Data/IA.
+  - name: dashboard
+    description: KPI et familles d'arômes.
+  - name: tendances
+    description: 'Arômes : liste filtrable, fiche détaillée.'
+  - name: rapport
+    description: Provenance, qualité, modèle ; signalements.
+  - name: showroom
+    description: Liens showroom temporaires (ADR 0010).

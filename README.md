@@ -1,19 +1,19 @@
 # project-init
 
-Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une IA locale (Ollama), le tout lancé avec Docker.
+Base de projet pour le hackathon : un front, une API, une base PostgreSQL et l'API de tendances de l'équipe Data/IA, le tout lancé avec Docker.
 
 ```
  navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
                                                  │
-                                                 ├──► Ollama en direct               (mode 1, par défaut)
-                                                 └──► API de l'équipe Data/IA (ngrok)  (mode 2)
+                                                 ├──► API de l'équipe Data/IA (ngrok)  (DATA_AI_URL renseignée)
+                                                 └──► CSV de repli                     (DATA_AI_URL vide, ou Data/IA coupée)
 ```
 
 | Dossier           | Rôle                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------- |
 | `web/`            | Front React + TypeScript + Tailwind (Vite), scène 3D three.js ([0007](docs/adr/0007-front-react.md)).    |
 | `api/`            | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
-| `db/init/`        | Schéma et données de test, joués au **premier** démarrage de la base.                                    |
+| `db/init/`        | Schéma de la base, joué au **premier** démarrage de la base.                                             |
 | `.devcontainer/`  | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
 | `docs/adr/`       | Les décisions d'architecture (ADR), dont le choix de FastAPI ([0004](docs/adr/0004-backend-fastapi.md)). |
 | `.agents/skills/` | Les skills des agents IA, dont le skill officiel FastAPI ([section 3](#3-coder-dans-le-dev-container)).  |
@@ -24,7 +24,7 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 1. [Prérequis](#1-prérequis)
 2. [Installation](#2-installation) : méthode 1 (à la main) ou méthode 2 (`setup.sh`)
 3. [Coder dans le dev container](#3-coder-dans-le-dev-container)
-4. [L'IA : deux modes](#4-lia--deux-modes)
+4. [Les données : API Data/IA et CSV de repli](#4-les-données--api-dataia-et-csv-de-repli)
 5. [Commandes utiles](#5-commandes-utiles)
 6. [Dépannage](#6-dépannage)
 7. [Sécurité](#7-sécurité)
@@ -33,7 +33,7 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 >
 > | Terminal                            | Pour                                                                 |
 > | ----------------------------------- | -------------------------------------------------------------------- |
-> | Ta machine (hôte)                   | `./setup.sh`, `docker compose …`, `ollama …`                         |
+> | Ta machine (hôte)                   | `./setup.sh`, `docker compose …`                                     |
 > | Dev container (`node@…:/workspace`) | Coder : `npm run lint`, `uv run pytest` (dans `api/`), `git`, `psql` |
 
 ---
@@ -45,35 +45,13 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 
 <br>
 
-| Outil                                                           | Obligatoire ?                  | Vérification             |
-| --------------------------------------------------------------- | ------------------------------ | ------------------------ |
-| [Docker](https://docs.docker.com/get-docker/) + Compose v2      | Oui                            | `docker compose version` |
-| Git                                                             | Oui                            | `git --version`          |
-| [Ollama](https://ollama.com/download)                           | Oui en mode 1 de l'IA (défaut) | `ollama --version`       |
-| VS Code (extension _Dev Containers_) ou [Zed](https://zed.dev/) | Non, pour coder dans Docker    |                          |
+| Outil                                                           | Obligatoire ?               | Vérification             |
+| --------------------------------------------------------------- | --------------------------- | ------------------------ |
+| [Docker](https://docs.docker.com/get-docker/) + Compose v2      | Oui                         | `docker compose version` |
+| Git                                                             | Oui                         | `git --version`          |
+| VS Code (extension _Dev Containers_) ou [Zed](https://zed.dev/) | Non, pour coder dans Docker |                          |
 
 Ni Node ni Python ne sont nécessaires sur ta machine : tout tourne dans les conteneurs.
-
-</details>
-
-<details>
-<summary><b>⚠️ Linux uniquement : faire écouter Ollama sur <code>0.0.0.0</code></b></summary>
-
-<br>
-
-Par défaut, Ollama n'écoute que sur `127.0.0.1` : le conteneur `api` ne peut pas le joindre. À faire **une seule fois** :
-
-```bash
-sudo systemctl edit ollama
-# ajoute ces deux lignes, enregistre :
-[Service]
-Environment="OLLAMA_HOST=0.0.0.0"
-sudo systemctl restart ollama
-```
-
-Vérification : `ss -ltn | grep 11434` doit afficher `0.0.0.0:11434` (ou `*:11434`).
-
-Sur macOS / Windows (Docker Desktop), rien à faire.
 
 </details>
 
@@ -101,17 +79,9 @@ cd hackathon-app
 cp api/.env.example api/.env
 ```
 
-Par défaut, `api/.env` pointe sur Ollama (mode 1). Pour le mode 2, voir [section 4](#4-lia--deux-modes).
+`api/.env.example` pointe déjà sur l'API Data/IA ; voir [section 4](#4-les-données--api-dataia-et-csv-de-repli).
 
-**2. Télécharger le modèle d'IA** (une seule fois, ~1,3 Go)
-
-```bash
-ollama pull llama3.2:1b
-```
-
-Sous Linux, vérifie d'abord qu'Ollama écoute sur `0.0.0.0` ([section 1](#1-prérequis)).
-
-**3. Démarrer la stack**
+**2. Démarrer la stack**
 
 ```bash
 docker compose up -d --wait api web
@@ -119,7 +89,7 @@ docker compose up -d --wait api web
 
 `db` et `install` démarrent automatiquement avant. Au premier lancement, Docker télécharge les images, construit celle de l'API (dépendances Python) et `install` fait un `npm ci` : compte quelques minutes.
 
-**4. Vérifier**
+**3. Vérifier**
 
 ```bash
 docker compose ps
@@ -140,14 +110,14 @@ docker compose ps
 
 Le script fait les mêmes étapes que la méthode 1, avec des vérifications en plus. Il est **relançable sans risque** : ce qui est déjà fait est sauté.
 
-| Étape         | Ce que fait le script                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------- |
-| Hôte          | Refuse de tourner dans un conteneur (il faut le lancer depuis ta machine).                |
-| Docker        | Vérifie que Docker est installé, que le démon répond et que Compose v2 est présent.       |
-| Configuration | Crée `api/.env` à partir de `api/.env.example` s'il n'existe pas.                         |
-| IA            | En mode 1 : vérifie qu'Ollama tourne, qu'il écoute sur `0.0.0.0` (Linux), pull le modèle. |
-| Ports         | Vérifie que 3000, 5173 et 5433 sont libres (sauf si la stack tourne déjà).                |
-| Démarrage     | `docker compose up -d --wait api web`, puis attend que tout soit sain.                    |
+| Étape         | Ce que fait le script                                                               |
+| ------------- | ----------------------------------------------------------------------------------- |
+| Hôte          | Refuse de tourner dans un conteneur (il faut le lancer depuis ta machine).          |
+| Docker        | Vérifie que Docker est installé, que le démon répond et que Compose v2 est présent. |
+| Configuration | Crée `api/.env` à partir de `api/.env.example` s'il n'existe pas.                   |
+| Données       | Indique si `DATA_AI_URL` est renseignée (sinon : CSV de repli, sans modèle).        |
+| Ports         | Vérifie que 3000, 5173 et 5433 sont libres (sauf si la stack tourne déjà).          |
+| Démarrage     | `docker compose up -d --wait api web`, puis attend que tout soit sain.              |
 
 Sous Windows : lance-le depuis **Git Bash** ou **WSL**.
 
@@ -158,7 +128,7 @@ Sous Windows : lance-le depuis **Git Bash** ou **WSL**.
 | URL                                 | Quoi                                                        |
 | ----------------------------------- | ----------------------------------------------------------- |
 | http://localhost:5173               | Le front                                                    |
-| http://localhost:3000/api/v1/health | Santé de l'API et version de la base                        |
+| http://localhost:3000/api/v1/health | Santé de l'API, de la base et de l'API Data/IA              |
 | http://localhost:3000/api/docs      | Swagger : la documentation des routes, testables en un clic |
 | http://localhost:5173/api/docs      | Le même Swagger, à travers le proxy du front                |
 | `localhost:5433` (user/mdp `app`)   | PostgreSQL (TablePlus, DBeaver, psql…)                      |
@@ -170,8 +140,6 @@ Sous Windows : lance-le depuis **Git Bash** ou **WSL**.
 Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node, Python, uv, git, `psql`, ESLint, Prettier et ruff déjà configurés. Il démarre la stack tout seul s'il le faut.
 
 À la création, le conteneur installe les dépendances Python dans `api/.venv` (`uv sync`). `pyrightconfig.json`, à la racine, indique ce venv et le dossier `api/` à l'analyse Python de l'éditeur (basedpyright dans Zed, Pylance dans VS Code) : sans lui, les imports de `app` et de FastAPI apparaissent en erreur.
-
-> Le dev container ne gère **pas** Ollama : fais au moins une fois la méthode 1 ou 2 pour que le modèle soit téléchargé.
 
 <details>
 <summary><b>VS Code</b></summary>
@@ -227,13 +195,13 @@ api/app/
 ├── models/              # les tables (SQLAlchemy)
 ├── schemas/             # les entrées et sorties de l'API (Pydantic)
 ├── repositories/        # les requêtes SQL
-├── clients/ai.py        # les deux modes d'IA
+├── clients/             # API Data/IA, CSV de repli, bascule entre les deux
 ├── services/            # la logique métier
 └── api/
-    ├── deps.py          # l'injection : choisit base, IA, services
+    ├── deps.py          # l'injection : choisit base, sources de données, services
     └── v1/
         ├── router.py    # regroupe les endpoints de la v1
-        └── endpoints/   # health.py, questions.py
+        └── endpoints/   # health, dashboard, trends, report, showroom
 ```
 
 Les règles, pour les humains comme pour les agents IA :
@@ -296,69 +264,25 @@ pwd      # /workspace
 | `uv run pytest`         | ✅ (dans `api/`) | Python, uv et le venv `api/.venv` sont dans le conteneur.           |
 | `uv run ruff check`     | ✅ (dans `api/`) | Lint Python ; `uv run ruff format` pour la forme.                   |
 | `git`, `gh`, `psql`     | ✅               | Installés dans l'image `dev`.                                       |
-| `./setup.sh`            | ❌ → hôte        | Il pilote Docker et Ollama de ta machine.                           |
+| `./setup.sh`            | ❌ → hôte        | Il pilote le Docker de ta machine.                                  |
 | `docker compose …`      | ❌ → hôte        | Pas de Docker dans le conteneur (ce serait un accès root à l'hôte). |
-| `ollama …`              | ❌ → hôte        | Ollama tourne sur ta machine.                                       |
 
 </details>
 
 ---
 
-## 4. L'IA : deux modes
+## 4. Les données : API Data/IA et CSV de repli
 
-L'API choisit son mode selon `api/.env` :
+L'API lit les tendances d'arômes chez l'équipe Data/IA, et bascule sur un CSV quand elle ne répond pas ([ADR 0008](docs/adr/0008-source-tendances-repli.md)) :
 
-| `DATA_AI_URL` dans `api/.env` | Mode                                                    |
-| ----------------------------- | ------------------------------------------------------- |
-| vide ou absente               | **Mode 1** : l'API parle directement à Ollama.          |
-| renseignée                    | **Mode 2** : l'API passe par l'API de l'équipe Data/IA. |
+| `DATA_AI_URL` dans `api/.env` | Données servies                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------- |
+| renseignée                    | API Data/IA : statuts, scores, séries ; CSV si elle est coupée (timeout, `5xx`…). |
+| vide                          | CSV de repli (`api/app/data/`) : indicateurs bruts, sans modèle.                  |
 
-<details>
-<summary><b>Mode 1 : Ollama en direct (par défaut)</b></summary>
+Chaque réponse porte `origin` (`data_ai` ou `csv_fallback`) et `data_date`. L'état de l'API Data/IA est dans `/api/v1/health` (`data_ai`).
 
-<br>
-
-Rien à configurer : `api/.env` pointe déjà sur `http://host.docker.internal:11434/v1`.
-
-**Ollama n'a pas de clé d'API** : laisse `AI_API_KEY=` vide.
-
-L'appel est compatible OpenAI. Pour passer sur un fournisseur commercial (Mistral, OpenAI…), il suffit de changer `AI_BASE_URL`, `AI_MODEL` et `AI_API_KEY` dans `api/.env` (exemples commentés dans `api/.env.example`).
-
-</details>
-
-<details>
-<summary><b>Mode 2 : l'API de l'équipe Data/IA</b></summary>
-
-<br>
-
-L'équipe Data/IA héberge sa propre API (derrière un tunnel ngrok) et la protège avec une **clé d'API** (en-tête `X-API-Key`). C'est elle qui génère la clé, par exemple avec :
-
-```bash
-openssl rand -hex 32
-```
-
-Elle te transmet l'URL et la clé **hors de git** (message privé, gestionnaire de mots de passe). Ajoute-les dans `api/.env` :
-
-```bash
-DATA_AI_URL=https://xxxx.ngrok-free.app
-DATA_AI_KEY=<la-clé-fournie-par-l-équipe-Data/IA>
-```
-
-Puis `docker compose restart api`.
-
-Le contrat attendu (voir le Swagger de l'équipe, sur `<DATA_AI_URL>/docs`) :
-
-```bash
-curl -X POST "$DATA_AI_URL/answer" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: $DATA_AI_KEY" \
-  -d '{"question": "Bonjour ?"}'
-# → {"answer": "...", "model": "..."}
-```
-
-Si leur machine se met en veille ou que le tunnel tombe, l'API abandonne au bout de 30 secondes. Pour revenir au mode 1, vide `DATA_AI_URL` et redémarre l'API.
-
-</details>
+L'URL du tunnel ngrok change quand l'équipe Data/IA le relance : mets la nouvelle dans `api/.env` (`DATA_AI_URL`), puis `docker compose restart api`. Si elle protège son API, ajoute sa clé dans `DATA_AI_KEY` (en-tête `X-API-Key`), transmise **hors de git**.
 
 ---
 
@@ -411,6 +335,12 @@ Depuis ta machine :
 docker compose down
 rm -rf db/data
 ./setup.sh
+```
+
+Les données vivent dans `db/data/` (dossier monté, pas un volume) : `docker compose down -v` ne les efface pas. Pour ajouter un nouveau fichier `db/init/*.sql` sans tout perdre, joue-le à la main :
+
+```bash
+docker compose exec -T db psql -U app -d app -v ON_ERROR_STOP=1 < db/init/004-showroom.sql
 ```
 
 </details>
@@ -469,19 +399,16 @@ Le hook pre-commit s'active à la création du dev container (script `prepare`).
 </details>
 
 <details>
-<summary><b>IA</b></summary>
+<summary><b>Données Data/IA</b></summary>
 
 <br>
 
-Une erreur de l'IA renvoie `502` avec un message court (`IA : …` en mode 1, `IA Data : …` en mode 2) ; le détail du fournisseur est dans `docker compose logs api`.
-
-| Symptôme                                              | Cause probable / solution                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `POST /api/v1/questions` → `502`, `IA : indisponible` | Ollama ne tourne pas, ou n'écoute que sur `127.0.0.1` (Linux : [section 1](#1-prérequis)). |
-| `502`, `IA : erreur 404` (logs : `model … not found`) | Le modèle n'est pas téléchargé : `ollama pull llama3.2:1b`.                                |
-| `502`, `IA Data : erreur 401`                         | `DATA_AI_KEY` (`api/.env`) ne correspond pas à la clé de l'équipe Data/IA.                 |
-| `502`, `IA Data : indisponible` (logs : timeout)      | Le tunnel ngrok de l'équipe Data/IA est coupé : préviens-la, ou repasse en mode 1.         |
-| `POST /api/v1/questions` → `422`                      | La question est vide ou absente : le détail est dans la réponse (validation Pydantic).     |
+| Symptôme                                                 | Cause probable / solution                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Réponses en `origin: "csv_fallback"`, `/health` → `down` | Le tunnel ngrok est coupé ou a changé d'URL : demande la nouvelle à l'équipe Data/IA.            |
+| `origin: "csv_fallback"`, `/health` → `non_configuree`   | `DATA_AI_URL` est vide dans `api/.env`.                                                          |
+| Logs : `bascule sur le CSV : erreur HTTP 401`            | `DATA_AI_KEY` (`api/.env`) ne correspond pas à la clé de l'équipe Data/IA.                       |
+| Logs : `bascule sur le CSV : format inattendu`           | L'équipe Data/IA a changé son format : adapter `api/app/clients/data_trends.py` et ses fixtures. |
 
 </details>
 

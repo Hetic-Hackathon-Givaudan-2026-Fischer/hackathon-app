@@ -202,7 +202,7 @@ export function createGear(): Gear {
       // Pas de refus pendant un tir.
       if (state.fireAge < 0) state.denyAge = 0;
     },
-    show: (name, blurb) => screen.paint(name, blurb),
+    show: (card) => screen.paint(card),
     update: (dt, time, ready, moving, focus) =>
       updateGear(rig, state, { dt, time, ready, moving, focus }),
   };

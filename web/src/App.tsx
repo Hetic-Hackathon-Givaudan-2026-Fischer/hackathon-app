@@ -1,58 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Crosshair } from './components/Crosshair';
-import { Dashboard } from './components/Dashboard';
-import { Overlay } from './components/Overlay';
-import { useExperience } from './hooks/useExperience';
+import { useCallback, useState } from 'react';
+import { Dashboard } from './components/dashboard/Dashboard';
+import { InternalImmersive } from './components/immersive/InternalImmersive';
 
+/**
+ * Interface interne : on arrive sur le dashboard ; la vue immersive ne
+ * s'ouvre que depuis lui. Le dashboard reste monté (filtres conservés) ;
+ * le moteur 3D, lui, n'existe que pendant la visite.
+ */
 export function App() {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const { playing, reading, enter, exit } = useExperience(stageRef);
-  const [initialLaunch, setInitialLaunch] = useState(true);
-  const [dashboardOpen, setDashboardOpen] = useState(false);
-
-  const handleStartGame = useCallback(() => {
-    setInitialLaunch(false);
-    setDashboardOpen(false);
-    enter();
-  }, [enter]);
-
-  const handleOpenDashboard = useCallback(() => {
-    setInitialLaunch(false);
-    exit();
-    setDashboardOpen(true);
-  }, [exit]);
-
-  // Raccourci clavier [Tab] pour passer directement du jeu 3D vers la vue Dashboard
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code !== 'Tab' && event.key !== 'Tab') return;
-      if (dashboardOpen) return;
-      event.preventDefault();
-      handleOpenDashboard();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [dashboardOpen, handleOpenDashboard]);
+  const [immersive, setImmersive] = useState(false);
+  const openImmersive = useCallback(() => setImmersive(true), []);
+  const closeImmersive = useCallback(() => setImmersive(false), []);
 
   return (
     <>
-      <div ref={stageRef} className="size-full" />
-      <div
-        className={`pointer-events-none fixed inset-0 z-10 ${
-          dashboardOpen ? 'hidden' : ''
-        }`}
-      >
-        <Overlay
-          playing={playing}
-          initialLaunch={initialLaunch}
-          onStartGame={handleStartGame}
-          onOpenDashboard={handleOpenDashboard}
-        />
-        <Crosshair visible={playing && !reading} />
+      <div hidden={immersive}>
+        <Dashboard active={!immersive} onEnter3D={openImmersive} />
       </div>
-      <div className={dashboardOpen ? 'block' : 'hidden'}>
-        <Dashboard onEnter3D={handleStartGame} />
-      </div>
+      {immersive && <InternalImmersive onBack={closeImmersive} />}
     </>
   );
 }

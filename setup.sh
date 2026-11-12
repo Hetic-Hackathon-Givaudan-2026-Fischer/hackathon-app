@@ -6,7 +6,6 @@ set -eu
 cd "$(dirname "$0")"
 
 PORTS="3000 5173 5433"
-OLLAMA_PORT=11434
 
 # --- Affichage ---------------------------------------------------------------
 
@@ -29,7 +28,7 @@ has() { command -v "$1" >/dev/null 2>&1; }
 
 # --- Hôte --------------------------------------------------------------------
 
-# Le script pilote Docker et Ollama de la machine : inutile dans le dev container
+# Le script pilote le Docker de la machine : inutile dans le dev container
 check_host() {
   [ -f /.dockerenv ] || [ -f /run/.containerenv ] || return 0
   fail "setup.sh se lance depuis ta machine, pas depuis le dev container" \
@@ -64,55 +63,14 @@ ensure_env_file() {
 # Dernière valeur de la clé $1 dans api/.env (vide si absente ou commentée)
 env_value() { sed -n "s/^$1=//p" api/.env | tail -n 1; }
 
-# Ollama local n'est utile qu'en mode 1, avec l'URL qui pointe sur l'hôte
-needs_local_ollama() {
-  [ -z "$(env_value DATA_AI_URL)" ] &&
-    env_value AI_BASE_URL | grep -q 'host.docker.internal'
-}
-
-# --- Ollama ------------------------------------------------------------------
-
-check_ollama_running() {
-  has ollama || fail "Ollama introuvable" "https://ollama.com/download"
-  ollama list >/dev/null 2>&1 ||
-    fail "Ollama est installé mais ne tourne pas" "Lance l'app Ollama ou 'ollama serve'"
-  ok "Ollama tourne"
-}
-
-# Sous Linux, le conteneur api ne joint Ollama que s'il écoute sur toutes les
-# interfaces (voir README, section 1)
-check_ollama_listen() {
-  [ "$(uname -s)" = Linux ] || return 0
-  if ! has ss; then
-    warn "Impossible de vérifier l'écoute d'Ollama (ss absent)"
-    return 0
-  fi
-  ss -ltn | grep -Eq "(0\.0\.0\.0|\*|\[::\]):$OLLAMA_PORT\b" ||
-    fail "Ollama n'écoute que sur 127.0.0.1 : le conteneur api ne pourra pas le joindre" \
-      "Voir README, section 1 : OLLAMA_HOST=0.0.0.0"
-  ok "Ollama écoute sur toutes les interfaces"
-}
-
-ensure_model() {
-  model=$(env_value AI_MODEL)
-  [ -n "$model" ] || fail "AI_MODEL est vide dans api/.env"
-  if ollama list | awk 'NR > 1 { print $1 }' | grep -qx "$model"; then
-    ok "Modèle $model déjà téléchargé"
+# Sans DATA_AI_URL, l'API sert le CSV de repli : utilisable, mais sans modèle
+check_data_ai() {
+  step "Données"
+  if [ -n "$(env_value DATA_AI_URL)" ]; then
+    ok "API Data/IA : $(env_value DATA_AI_URL) (CSV en repli si elle ne répond pas)"
   else
-    warn "Téléchargement du modèle $model (une seule fois)"
-    ollama pull "$model"
+    warn "DATA_AI_URL vide dans api/.env : tendances lues dans le CSV, sans modèle"
   fi
-}
-
-check_ai() {
-  step "IA"
-  if ! needs_local_ollama; then
-    ok "Ollama local inutile avec la config actuelle de api/.env"
-    return 0
-  fi
-  check_ollama_running
-  check_ollama_listen
-  ensure_model
 }
 
 # --- Ports -------------------------------------------------------------------
@@ -165,7 +123,7 @@ main() {
   check_host
   check_docker
   ensure_env_file
-  check_ai
+  check_data_ai
   check_ports
   start_stack
   print_summary

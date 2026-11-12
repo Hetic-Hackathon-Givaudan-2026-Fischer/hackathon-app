@@ -34,15 +34,18 @@ Ordre de priorité, du plus fort au plus faible :
 
 Quel ADR lire avant de toucher à :
 
-| Sujet                                    | ADR                             |
-| ---------------------------------------- | ------------------------------- |
-| appel à l'IA, `api/.env`                 | [0001](0001-client-ia.md)       |
-| `compose.yml`, Dockerfile, dev container | [0002](0002-docker-compose.md)  |
-| `api/tests/`, `tests.yml`                | [0003](0003-tests.md)           |
-| `api/app/`, dépendances Python, base     | [0004](0004-backend-fastapi.md) |
-| `security.yml`, secrets                  | [0005](0005-ci-securite.md)     |
-| `AGENTS.md`, `CLAUDE.md`, skills, ADR    | [0006](0006-cadre-agents-ia.md) |
-| `web/`, dépendances npm du front         | [0007](0007-front-react.md)     |
+| Sujet                                    | ADR                                               |
+| ---------------------------------------- | ------------------------------------------------- |
+| `api/.env`, sources de données           | [0008](0008-source-tendances-repli.md) (proposée) |
+| `compose.yml`, Dockerfile, dev container | [0002](0002-docker-compose.md)                    |
+| `api/tests/`, `tests.yml`                | [0003](0003-tests.md)                             |
+| `api/app/`, dépendances Python, base     | [0004](0004-backend-fastapi.md)                   |
+| `security.yml`, secrets                  | [0005](0005-ci-securite.md)                       |
+| `AGENTS.md`, `CLAUDE.md`, skills, ADR    | [0006](0006-cadre-agents-ia.md)                   |
+| `web/`, dépendances npm du front         | [0007](0007-front-react.md)                       |
+| appels réseau et types du front          | [0012](0012-types-front-openapi.md)               |
+| tendances, Data/IA, CSV de repli         | [0008](0008-source-tendances-repli.md) (proposée) |
+| liens showroom                           | [0010](0010-liens-showroom.md) (proposée)         |
 
 Écarts entre le skill FastAPI et ce dépôt (l'ADR gagne) :
 

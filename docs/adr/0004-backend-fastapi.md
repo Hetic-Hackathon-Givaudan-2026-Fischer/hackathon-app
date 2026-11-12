@@ -27,7 +27,7 @@ Option 2. Structure en couches dans [`api/app/`](../../api/app/) :
 | [`api/errors.py`](../../api/app/api/errors.py)                               | Erreurs métier → réponses HTTP.                                       |
 | [`services/`](../../api/app/services/)                                       | Logique métier ; ne dépend que des `Protocol` de `ports.py`.          |
 | [`repositories/`](../../api/app/repositories/)                               | SQL (SQLAlchemy async + asyncpg).                                     |
-| [`clients/ai.py`](../../api/app/clients/ai.py)                               | Modes d'IA derrière `AnswerProvider` ([0001](0001-client-ia.md)).     |
+| [`clients/`](../../api/app/clients/)                                         | API Data/IA et CSV de repli ([0008](0008-source-tendances-repli.md)). |
 | [`models/`](../../api/app/models/) / [`schemas/`](../../api/app/schemas/)    | Tables SQLAlchemy / entrées-sorties Pydantic.                         |
 | [`core/config.py`](../../api/app/core/config.py), [`db/`](../../api/app/db/) | Configuration (`api/.env`), connexion.                                |
 
@@ -37,13 +37,13 @@ Règles :
 - Un service ne dépend que d'un `Protocol`, jamais d'une implémentation.
 - Nouvelle version d'API : `api/v2/` à côté, sans casser la v1.
 - Routes sous `/api/v1` ; Swagger sur `/api/docs`.
-- Codes d'erreur : `422` entrée invalide (Pydantic, question de 1 à 4 000 caractères), `502` erreur de l'IA, `503` base injoignable. Le détail technique reste dans les logs, jamais dans la réponse.
+- Codes d'erreur : `422` entrée invalide (Pydantic), `503` base injoignable ; `404`, `410` et `500` : voir [0008](0008-source-tendances-repli.md). Le détail technique reste dans les logs, jamais dans la réponse.
 - Schéma de base dans `db/init/*.sql` (joué au premier démarrage) ; pas d'Alembic.
 - Dépendances : `uv add` dans `api/`, commiter `pyproject.toml` **et** `uv.lock`.
 - Python 3.13 : celui de Debian trixie dans [`api/Dockerfile`](../../api/Dockerfile) et le dev container, celui de l'image uv en CI. Port 3000.
 
 ## Conséquences
 
-- Positives : toute l'équipe peut travailler sur l'API ; Swagger toujours à jour ; entrées invalides rejetées sans code ; base et IA simulables ([0003](0003-tests.md)) ; cadre clair pour les agents IA.
+- Positives : toute l'équipe peut travailler sur l'API ; Swagger toujours à jour ; entrées invalides rejetées sans code ; base et API Data/IA simulables ([0003](0003-tests.md)) ; cadre clair pour les agents IA.
 - Négatives : deux écosystèmes (npm pour le front, uv pour l'API) et deux jeux d'outils qualité (ESLint/Prettier, ruff).
-- À revoir si : le schéma évolue souvent (passer à Alembic) ; besoin de streaming de l'IA ; Python n'est plus le langage commun de l'équipe.
+- À revoir si : le schéma évolue souvent (passer à Alembic) ; Python n'est plus le langage commun de l'équipe.

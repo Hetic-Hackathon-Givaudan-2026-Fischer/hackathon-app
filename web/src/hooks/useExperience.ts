@@ -6,7 +6,14 @@ import {
   type RefObject,
 } from 'react';
 import { ensureBrandFont } from '../brand';
-import { createExperience, type Experience } from '../engine/experience';
+import {
+  createExperience,
+  type Category,
+  type Experience,
+  type ScanCard,
+} from '../engine/experience';
+
+export type DescribeCategory = (category: Category) => ScanCard;
 
 export interface ExperienceState {
   /** Visite en cours (souris verrouillée). */
@@ -21,14 +28,24 @@ export interface ExperienceState {
 
 /**
  * Monte le moteur 3D dans `containerRef` une fois la police chargée (les
- * textures canvas en dépendent), et le libère au démontage.
+ * textures canvas en dépendent), et le libère au démontage. `describe` donne
+ * la fiche d'un rayon scanné : toujours la dernière version, même si les
+ * données arrivent après la création du moteur.
  */
 export function useExperience(
   containerRef: RefObject<HTMLElement | null>,
+  describe: DescribeCategory,
 ): ExperienceState {
   const [playing, setPlaying] = useState(false);
   const [reading, setReading] = useState(false);
   const experienceRef = useRef<Experience | null>(null);
+  const describeRef = useRef(describe);
+
+  // Nouvelles données : la fiche déjà affichée (ex. « Chargement… ») se met à jour
+  useEffect(() => {
+    describeRef.current = describe;
+    experienceRef.current?.refreshCard();
+  }, [describe]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -39,6 +56,7 @@ export function useExperience(
       experienceRef.current = createExperience(container, {
         onPlayingChange: setPlaying,
         onReadingChange: setReading,
+        describeCategory: (category) => describeRef.current(category),
       });
     });
     return () => {

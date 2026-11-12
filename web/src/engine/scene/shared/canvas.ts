@@ -93,3 +93,16 @@ export function fillFrom(
   lines.forEach((line, index) => ctx.fillText(line, x, y + index * lineHeight));
   return y + Math.max(lines.length, 1) * lineHeight;
 }
+
+/** `text` sur une seule ligne de `maxWidth` au plus, tronqué par « … ». */
+export function fitLine(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let end = text.length;
+  while (end > 0 && ctx.measureText(`${text.slice(0, end)}…`).width > maxWidth)
+    end -= 1;
+  return `${text.slice(0, end).trimEnd()}…`;
+}
