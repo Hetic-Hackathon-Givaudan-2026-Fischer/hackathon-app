@@ -1,4 +1,4 @@
-// Vitrine réfrigérée : caisson sombre, deux portes vitrées, quatre étagères.
+// Vitrine réfrigérée : caisson sombre, deux portes vitrées, trois étagères.
 import * as THREE from 'three';
 import type { Category } from '../../types';
 import { commitProducts, fillShelf } from '../products';
@@ -17,8 +17,8 @@ const DOOR_W = (W - 0.18) / 2;
 const DOOR_H = H - 0.36;
 /** Plan des portes, devant le caisson. */
 const FRONT = D / 2 + 0.02;
-const SHELF_YS = [0.34, 0.78, 1.22, 1.66] as const;
-const FEATURE_SHELF = 2;
+const SHELF_YS = [0.72, 1.16, 1.6] as const;
+const FEATURE_SHELF = 1;
 
 /** Dos, flancs, dessus, socle et paroi intérieure claire. */
 function cabinet({ metalDark }: MarketMaterials): THREE.Mesh[] {
@@ -109,7 +109,7 @@ function addShelf(build: BayBuild, y: number, feature: boolean): void {
   heroes.forEach((item) => bay.add(item));
 }
 
-/** Gabarit de frigo ; `feature` met un produit en avant (3e étagère). */
+/** Gabarit de frigo ; `feature` met un produit en avant (2e étagère). */
 export function createFridge(
   category: Category,
   materials: MarketMaterials,

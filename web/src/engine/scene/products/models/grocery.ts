@@ -1,41 +1,15 @@
 // Épicerie et traiteur : chips, sauces, barquettes, végétal, protéines.
-import * as THREE from 'three';
+import type * as THREE from 'three';
 import { standard } from '../materials';
 import { assemble, box, cylinder, labelAt, part } from './parts';
+import { pillowBagGeometry } from './pouch';
 
-/** Silhouette du sachet de chips, vue de face. */
-function chipsOutline(): THREE.Shape {
-  const shape = new THREE.Shape();
-  shape.moveTo(-0.016, 0.002);
-  shape.lineTo(-0.036, 0.016);
-  shape.bezierCurveTo(-0.046, 0.046, -0.044, 0.108, -0.032, 0.138);
-  shape.lineTo(-0.018, 0.154);
-  shape.lineTo(0.018, 0.154);
-  shape.lineTo(0.032, 0.138);
-  shape.bezierCurveTo(0.044, 0.108, 0.046, 0.046, 0.036, 0.016);
-  shape.lineTo(0.016, 0.002);
-  shape.closePath();
-  return shape;
-}
-
-function chipsGeometry(): THREE.ExtrudeGeometry {
-  const geometry = new THREE.ExtrudeGeometry(chipsOutline(), {
-    depth: 0.016,
-    bevelEnabled: true,
-    bevelThickness: 0.003,
-    bevelSize: 0.003,
-    bevelSegments: 1,
-    curveSegments: 10,
-  });
-  geometry.translate(0, 0, -0.008);
-  return geometry;
-}
-
+/** Sachet coussin : film métallisé, soudé et dentelé aux deux bouts. */
 export function chipsBag(color: number, name: string): THREE.Group {
-  const film = standard(color, { roughness: 0.45 });
+  const film = standard(color, { roughness: 0.32, metalness: 0.22 });
   return assemble(
-    part(chipsGeometry(), film, [0, 0, 0]),
-    labelAt(name, 0.064, 0.038, [0, 0.078, 0.014]),
+    part(pillowBagGeometry(), film, [0, 0, 0]),
+    labelAt(name, 0.06, 0.04, [0, 0.074, 0.028]),
   );
 }
 

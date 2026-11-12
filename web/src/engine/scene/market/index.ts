@@ -13,8 +13,6 @@ import { addShell } from './shell';
 import { addBlades, addSlogan } from './signage';
 import { addWelcomeBoard } from './welcome';
 
-export { coversMarket } from './layout';
-
 function createContext(): BuildContext {
   return {
     plan: layoutPlan(),
