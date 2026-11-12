@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+/* Charte : mêmes valeurs que `src/brand.ts` (textures du moteur 3D). */
+@theme {
+  --font-sans: 'Jost', 'Century Gothic', Futura, 'Avenir Next', sans-serif;
+  --color-ink: #0b1215;
+  --color-ivory: #faf9f6;
+  --color-mauve: #78608d;
+  --color-plum: #4a2038;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply size-full overflow-hidden bg-ink font-sans text-ivory;
+  }
+}
+
+/* Voile prune de l'écran d'accueil, par-dessus la scène. */
+@utility bg-plum-haze {
+  background:
+    radial-gradient(
+      ellipse 72% 58% at 22% 78%,
+      rgb(122 42 78 / 0.42),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 64% 52% at 78% 18%,
+      rgb(62 18 42 / 0.5),
+      transparent 58%
+    ),
+    linear-gradient(180deg, rgb(11 18 21 / 0.16), rgb(11 18 21 / 0.42));
+}
+
+@utility bg-plum-glow-top {
+  background: radial-gradient(
+    ellipse at 40% 55%,
+    rgb(146 58 96 / 0.38),
+    rgb(42 12 28 / 0.05) 68%
+  );
+}
+
+@utility bg-plum-glow-bottom {
+  background: radial-gradient(
+    ellipse at 60% 40%,
+    rgb(92 28 58 / 0.34),
+    transparent 70%
+  );
+}
+
+/* Texte clair lisible sur la scène, quelle que soit la zone dessous. */
+@utility text-shadow-scene {
+  text-shadow: 0 1px 14px rgb(11 18 21 / 0.45);
+}

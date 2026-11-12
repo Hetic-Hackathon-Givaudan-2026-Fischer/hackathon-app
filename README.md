@@ -11,7 +11,7 @@ Base de projet pour le hackathon : un front, une API, une base PostgreSQL et une
 
 | Dossier           | Rôle                                                                                                     |
 | ----------------- | -------------------------------------------------------------------------------------------------------- |
-| `web/`            | Front Vite + TypeScript. Les appels `/api` sont relayés vers l'API.                                      |
+| `web/`            | Front React + TypeScript + Tailwind (Vite), scène 3D three.js ([0007](docs/adr/0007-front-react.md)).    |
 | `api/`            | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
 | `db/init/`        | Schéma et données de test, joués au **premier** démarrage de la base.                                    |
 | `.devcontainer/`  | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
