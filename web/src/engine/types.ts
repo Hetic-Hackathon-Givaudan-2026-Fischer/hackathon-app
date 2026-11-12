@@ -6,13 +6,31 @@ import type * as THREE from 'three';
 /** Mobilier d'un rayon : vitrine réfrigérée ou gondole. */
 export type ShelfKind = 'fridge' | 'gondola';
 
-/** Rubrique du magasin, portée par `userData.category` des produits. */
+/** Rubrique du magasin : un type de produit (yaourt, snack, sauce…). */
 export interface Category {
   id: string;
   name: string;
   blurb: string;
   type: ShelfKind;
   accent: number;
+}
+
+/** Arôme posé sur un produit. Le nom imprimé vient des données. */
+export interface ShelfFlavor {
+  id: string;
+  name: string;
+}
+
+/** Arômes applicables, par identifiant de rubrique. */
+export type ShelfStock = Readonly<Record<string, readonly ShelfFlavor[]>>;
+
+/**
+ * Produit scanné : le type de produit visé et l'arôme qu'il porte.
+ * La fiche est construite hors du moteur.
+ */
+export interface ScannedProduct {
+  category: Category;
+  trendId: string;
 }
 
 /** Une ligne de la fiche de scan : un arôme et ses données, déjà mises en forme. */
@@ -60,6 +78,8 @@ export interface Market {
   group: THREE.Group;
   productMeshes: THREE.Mesh[];
   colliders: Collider[];
+  /** Pose les arômes sur les produits ; rappelé quand les données arrivent. */
+  stock(flavors: ShelfStock): void;
   updateDoors(position: THREE.Vector3, dt: number): void;
   updateSpotlights(time: number): void;
 }

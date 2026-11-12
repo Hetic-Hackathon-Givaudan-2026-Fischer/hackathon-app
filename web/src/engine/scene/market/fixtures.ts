@@ -1,9 +1,15 @@
 // Mobilier stocké : gabarits clonés, posés dans les allées et au mur frais.
 import * as THREE from 'three';
-import type { BoxCollider, Category, ShelfKind } from '../../types';
-import { type BuildContext, addBlock } from './context';
-import { createFridge } from './fridge';
-import { type Cap, type GondolaSpec, createGondola } from './gondola';
+import type { BoxCollider, Category, ShelfKind, ShelfStock } from '../../types';
+import { FACINGS, stockBay } from '../products';
+import { type BuildContext, type PlacedBay, addBlock } from './context';
+import { createFridge, fridgeLevels } from './fridge';
+import {
+  type Cap,
+  type GondolaSpec,
+  createGondola,
+  gondolaLevels,
+} from './gondola';
 import { type ShelfLine, bayPresent, categoryIndex } from './plan';
 import { aisleSignTexture } from './textures';
 import { cached } from '../shared/cache';
@@ -39,13 +45,25 @@ function cloneMaterial(
     : material.clone();
 }
 
+function disposeMaterial(material: THREE.Material | THREE.Material[]): void {
+  const materials = Array.isArray(material) ? material : [material];
+  for (const item of materials) item.dispose();
+}
+
 /** Produit vedette : matériaux propres (il pulse seul) et pose de repos. */
 function registerSpotlight(ctx: BuildContext, item: THREE.Object3D): void {
   item.traverse((node) => {
-    if (node instanceof THREE.Mesh)
-      node.material = cloneMaterial(node.material);
-    else if (node instanceof THREE.Sprite)
-      node.material = node.material.clone();
+    if (node instanceof THREE.Mesh) {
+      const previous = node.material;
+      node.material = cloneMaterial(previous);
+      if (node.userData.ownedMaterial) disposeMaterial(previous);
+      node.userData.ownedMaterial = true;
+    } else if (node instanceof THREE.Sprite) {
+      const previous = node.material;
+      node.material = previous.clone();
+      if (node.userData.ownedMaterial) previous.dispose();
+      node.userData.ownedMaterial = true;
+    }
   });
   item.userData.base = item.position.clone();
   item.userData.baseRotY = item.rotation.y;
@@ -53,26 +71,33 @@ function registerSpotlight(ctx: BuildContext, item: THREE.Object3D): void {
   ctx.spotlights.push(item);
 }
 
-/** Recense vedettes et maillages visables (rubrique héritée du parent). */
+/** Recense la vedette et le volume de visée (seul maillage scannable). */
 function registerChild(ctx: BuildContext, child: THREE.Object3D): void {
   if (child.userData.spotlight) registerSpotlight(ctx, child);
-  if (!(child instanceof THREE.Mesh) || child.userData.halo) return;
-  const inherited: unknown = child.parent?.userData.category;
-  if (!child.userData.category && inherited)
-    child.userData.category = inherited;
-  if (child.userData.category) ctx.productMeshes.push(child);
+  if (child.userData.pick && child instanceof THREE.Mesh)
+    ctx.productMeshes.push(child);
 }
 
-/** Clone le gabarit `key` (construit au premier besoin) et l'enregistre. */
+/** Clone le gabarit `key` (construit au premier besoin). */
 function stockedBay(
-  ctx: BuildContext,
   cache: Map<string, THREE.Group>,
   key: string,
   build: () => THREE.Group,
 ): THREE.Group {
-  const bay = cached(cache, key, build).clone(true);
-  bay.traverse((child) => registerChild(ctx, child));
-  return bay;
+  return cached(cache, key, build).clone(true);
+}
+
+/** Réserve `slots` arômes de la rubrique et mémorise le meuble. */
+function placeProducts(
+  ctx: BuildContext,
+  group: THREE.Group,
+  category: Category,
+  levels: PlacedBay['levels'],
+): void {
+  const slots = levels.length * FACINGS;
+  const offset = ctx.flavorOffsets.get(category.id) ?? 0;
+  ctx.flavorOffsets.set(category.id, offset + slots);
+  ctx.bays.push({ group, category, levels, offset });
 }
 
 function bayCollider(
@@ -133,10 +158,11 @@ export function addAisles(ctx: BuildContext): void {
     ctx.plan.runZ.forEach((z, index) => {
       if (!bayPresent(ctx.plan, lineIndex, index)) return;
       const spec = gondolaSpec(ctx, line, lineIndex, index);
-      const key = `${spec.category.id}:${spec.capNorth}:${spec.capSouth}:${spec.hero ? 1 : 0}`;
-      const bay = stockedBay(ctx, cache, key, () =>
+      const key = `${spec.category.id}:${spec.capNorth}:${spec.capSouth}`;
+      const bay = stockedBay(cache, key, () =>
         createGondola(spec, ctx.materials),
       );
+      placeProducts(ctx, bay, spec.category, gondolaLevels(spec.hero));
       placeBay(
         ctx,
         bay,
@@ -163,10 +189,10 @@ export function addColdWall(ctx: BuildContext): void {
   const { fridges, fridgeZ } = ctx.plan;
   fridges.forEach((slot, index) => {
     const hero = index % 2 === 0;
-    const key = `${slot.category.id}:${hero ? 1 : 0}`;
-    const bay = stockedBay(ctx, cache, key, () =>
-      createFridge(slot.category, ctx.materials, hero),
+    const bay = stockedBay(cache, slot.category.id, () =>
+      createFridge(slot.category, ctx.materials),
     );
+    placeProducts(ctx, bay, slot.category, fridgeLevels(hero));
     const place = {
       category: slot.category,
       x: slot.x,
@@ -177,4 +203,34 @@ export function addColdWall(ctx: BuildContext): void {
     const next = fridges[index + 1];
     if (next) addMullion(ctx, (slot.x + next.x) / 2);
   });
+}
+
+function stockSignature(stock: ShelfStock): string {
+  return Object.entries(stock)
+    .map(
+      ([id, flavors]) =>
+        `${id}:${flavors.map((flavor) => flavor.id).join(',')}`,
+    )
+    .join('|');
+}
+
+/** Repose les produits, puis ne rend visables que les volumes de scan. */
+export function refillShelves(ctx: BuildContext, stock: ShelfStock): void {
+  const signature = stockSignature(stock);
+  if (signature === ctx.stockSignature) return;
+  ctx.stockSignature = signature;
+  for (const bay of ctx.bays) {
+    stockBay(
+      bay.group,
+      bay.category,
+      bay.levels,
+      stock[bay.category.id] ?? [],
+      bay.offset,
+    );
+  }
+  ctx.productMeshes.length = 0;
+  ctx.spotlights.length = 0;
+  for (const bay of ctx.bays) {
+    bay.group.traverse((child) => registerChild(ctx, child));
+  }
 }

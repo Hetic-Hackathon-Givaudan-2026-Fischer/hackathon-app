@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTrendFilters } from '../../hooks/useTrendFilters';
 import {
   useFamilies,
@@ -13,6 +13,7 @@ import { Topbar } from './Topbar';
 import { ShowroomLinkDialog } from './ShowroomLinkDialog';
 import { SimulationDialog } from './SimulationDialog';
 import { TrendsPanel } from './TrendsPanel';
+import { TabShortcut } from '../TabShortcut';
 import { BUTTON_PRIMARY, BUTTON_SECONDARY } from './ui';
 
 // Police du prototype « CRM » : Inter, sinon la police système
@@ -35,6 +36,20 @@ export function Dashboard({ active, onEnter3D }: DashboardProps) {
   const [simulation, setSimulation] = useState(false);
   const closeDrawer = useCallback(() => setSelectedId(null), []);
   const origin = summary.data?.origin;
+  const dialogOpen = selectedId !== null || linkDialog || simulation;
+
+  useEffect(() => {
+    if (!active || dialogOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || event.shiftKey || event.altKey) return;
+      if (event.ctrlKey || event.metaKey) return;
+      if (isTypingTarget(event.target)) return;
+      event.preventDefault();
+      onEnter3D();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [active, dialogOpen, onEnter3D]);
 
   return (
     <div
@@ -69,6 +84,14 @@ export function Dashboard({ active, onEnter3D }: DashboardProps) {
             />
           </div>
         </main>
+        <div className="shrink-0 border-t border-[#E5E7EB] bg-[#FAFAFA] px-4 py-4 lg:px-8">
+          <TabShortcut
+            floating={false}
+            label="Retour au showroom"
+            title="Appuyez sur Tab pour revenir au showroom"
+            onClick={onEnter3D}
+          />
+        </div>
       </div>
       {selectedId && (
         <TrendDrawer
@@ -96,6 +119,18 @@ interface PageHeaderProps {
   onShareLink: () => void;
 }
 
+/** Champ de saisie : Tab garde son rôle (quitter le champ), il n'ouvre pas le magasin. */
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    target.isContentEditable
+  );
+}
+
 function PageHeader({ onEnter3D, onSimulate, onShareLink }: PageHeaderProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -110,7 +145,7 @@ function PageHeader({ onEnter3D, onSimulate, onShareLink }: PageHeaderProps) {
           Simuler un arôme
         </button>
         <button type="button" onClick={onShareLink} className={BUTTON_PRIMARY}>
-          Générer un lien showroom
+          Accès au showroom digital
         </button>
       </div>
     </div>

@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import type { ApiError } from '../../api/client';
 import type { ShowroomRead } from '../../api/types';
-import type { Category } from '../../engine/experience';
+import type { ScannedProduct } from '../../engine/experience';
 import { useShowroom } from '../../hooks/useTrendsApi';
 import { buildScanCard, fromShowroom } from '../../immersive/scanCard';
+import { shelfStock } from '../../immersive/shelfStock';
 import { formatDate } from '../../lib/format';
 import { ImmersiveView } from '../immersive/ImmersiveView';
 
@@ -25,12 +26,13 @@ function ShowroomLoader({ token }: { token: string }) {
 
 function ShowroomScene({ view }: { view: ShowroomRead }) {
   const scanData = useMemo(() => fromShowroom(view), [view]);
+  const stock = useMemo(() => shelfStock(scanData.trends), [scanData]);
   const describe = useCallback(
-    (category: Category) => buildScanCard(category, { data: scanData }),
+    (product: ScannedProduct) => buildScanCard(product, { data: scanData }),
     [scanData],
   );
   return (
-    <ImmersiveView describe={describe}>
+    <ImmersiveView describe={describe} stock={stock}>
       <p className="pointer-events-none fixed top-4 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink/75 px-4 py-1.5 text-[12px] text-ivory backdrop-blur-sm">
         Showroom · {view.client_label} · lien valable jusqu'au{' '}
         {formatDate(view.expires_at)}

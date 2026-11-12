@@ -8,8 +8,8 @@ import type { Collider } from './types';
 const SPEED = 4.4;
 const PLAYER_HEIGHT = 1.65;
 const RADIUS = 0.34;
-const START = new THREE.Vector3(0.16, PLAYER_HEIGHT, 9.55);
-const START_LOOK = new THREE.Vector3(0.16, 1.15, -2);
+const START = new THREE.Vector3(0.16, PLAYER_HEIGHT, 11.55);
+const START_LOOK = new THREE.Vector3(0.16, 1.15, 0);
 
 type Direction = 'forward' | 'back' | 'left' | 'right';
 type Pressed = Record<Direction, boolean>;

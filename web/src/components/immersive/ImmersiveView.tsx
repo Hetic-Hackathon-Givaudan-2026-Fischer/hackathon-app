@@ -1,15 +1,15 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
-import {
-  useExperience,
-  type DescribeCategory,
-} from '../../hooks/useExperience';
+import { useCallback, useRef, type ReactNode } from 'react';
+import type { ShelfStock } from '../../engine/experience';
+import { useExperience, type DescribeProduct } from '../../hooks/useExperience';
 import { useWindowKey } from '../../hooks/useWindowKey';
 import { Crosshair } from '../Crosshair';
 import { Overlay } from '../Overlay';
 
 interface ImmersiveViewProps {
-  /** Fiche d'un rayon scanné (données de l'API). */
-  describe: DescribeCategory;
+  /** Fiche de l'arôme porté par le produit scanné. */
+  describe: DescribeProduct;
+  /** Arômes à imprimer, déjà filtrés par type de produit. */
+  stock: ShelfStock;
   /** Retour au dashboard (touche Tab) ; absent côté showroom client. */
   onBack?: () => void;
   /** Bandeau au-dessus de la scène (ex. client du showroom). */
@@ -19,37 +19,25 @@ interface ImmersiveViewProps {
 /** Magasin 3D : monté à l'entrée dans la vue, libéré (`dispose`) en la quittant. */
 export function ImmersiveView({
   describe,
+  stock,
   onBack,
   children,
 }: ImmersiveViewProps) {
   const stageRef = useRef<HTMLDivElement>(null);
-  const { playing, reading, enter, exit } = useExperience(stageRef, describe);
-  const [started, setStarted] = useState(false);
-
-  const start = useCallback(() => {
-    setStarted(true);
-    enter();
-  }, [enter]);
+  const { playing, reading, exit } = useExperience(stageRef, describe, stock);
 
   const back = useCallback(() => {
     exit();
     onBack?.();
   }, [exit, onBack]);
 
-  // Tab ne quitte la 3D qu'une fois la visite commencée : sur l'accueil, il
-  // garde son rôle (passer d'un bouton à l'autre)
-  useWindowKey('Tab', onBack ? back : undefined, started);
+  useWindowKey('Tab', onBack ? back : undefined, true);
 
   return (
     <div className="fixed inset-0 bg-ink">
       <div ref={stageRef} className="size-full" />
       <div className="pointer-events-none fixed inset-0 z-10">
-        <Overlay
-          playing={playing}
-          started={started}
-          onStart={start}
-          onBack={onBack ? back : undefined}
-        />
+        <Overlay playing={playing} onBack={onBack ? back : undefined} />
         <Crosshair visible={playing && !reading} />
       </div>
       {children}

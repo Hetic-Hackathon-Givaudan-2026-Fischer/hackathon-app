@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { menuColor } from '../../../brand';
 import type { Category } from '../../types';
-import { commitProducts, fillShelf } from '../products';
+import { type ShelfLevel } from '../products';
 import { type BayBuild, box } from './context';
 import { GONDOLA_DEPTH, GONDOLA_LEN } from './layout';
 import { type MarketMaterials, ledWarm } from './materials';
@@ -72,44 +72,37 @@ function gondolaFrame(
   return [back, left, right, stripe, top];
 }
 
-/** Tablette, bord, réglette LED, puis les produits. */
-function addShelf(build: BayBuild, y: number, feature: boolean): void {
+/** Hauteur, largeur et profondeur utiles de chaque tablette. */
+export function gondolaLevels(hero: boolean): ShelfLevel[] {
+  return SHELF_YS.map((y, shelf) => ({
+    y: y + 0.014,
+    width: W - 0.12,
+    depth: D,
+    feature: hero && shelf === FEATURE_SHELF,
+  }));
+}
+
+/** Tablette, bord et réglette LED. Les produits sont posés ensuite. */
+function addShelf(build: BayBuild, y: number): void {
   const { bay, materials } = build;
   bay.add(
     box(materials.whiteShelf, [W - 0.08, 0.028, D - 0.06], [0, y, 0.01]),
     box(materials.metal, [W - 0.1, 0.022, 0.028], [0, y - 0.018, D / 2 - 0.03]),
     box(ledWarm, [W - 0.22, 0.008, 0.018], [0, y + 0.02, -0.05]),
   );
-  const heroes = fillShelf(
-    build.stock,
-    build.category,
-    y + 0.014,
-    W - 0.12,
-    D,
-    feature,
-  );
-  heroes.forEach((item) => bay.add(item));
 }
 
-/** Gabarit de gondole, produits fusionnés par matériau. */
+/** Gabarit de gondole, sans les produits (posés quand les arômes sont connus). */
 export function createGondola(
   spec: GondolaSpec,
   materials: MarketMaterials,
 ): THREE.Group {
   const { category } = spec;
   const index = categoryIndex(category);
-  const build: BayBuild = {
-    bay: new THREE.Group(),
-    stock: [],
-    category,
-    materials,
-  };
+  const build: BayBuild = { bay: new THREE.Group(), category, materials };
   build.bay.add(...gondolaFrame(materials, menuColor(index)));
   if (spec.capNorth) build.bay.add(endCap(category.name, index, spec.capNorth));
   if (spec.capSouth) build.bay.add(endCap(category.name, index, spec.capSouth));
-  SHELF_YS.forEach((y, shelf) =>
-    addShelf(build, y, spec.hero && shelf === FEATURE_SHELF),
-  );
-  commitProducts(build.bay, category, build.stock, []);
+  SHELF_YS.forEach((y) => addShelf(build, y));
   return build.bay;
 }
