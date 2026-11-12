@@ -1,145 +1,135 @@
-# project-init
+# hackathon-app
 
-Base de projet pour le hackathon : un front, une API, une base PostgreSQL et l'API de tendances de l'équipe Data/IA, le tout lancé avec Docker.
+Application du hackathon Givaudan : les **tendances d'arômes** de l'équipe Data/IA, présentées dans un magasin 3D, un dashboard interne et un showroom pour les clients.
 
+- **En dev** : tout tourne dans Docker (front, API, base). Rien d'autre à installer que Docker et Git.
+- **En démo** : front et API sont déployés sur Vercel, derrière un seul domaine.
+
+## Démarrage rapide
+
+Depuis un terminal **de ta machine** (pas du dev container) :
+
+```bash
+git clone https://github.com/Hetic-Hackathon-Givaudan-2026-Fischer/hackathon-app.git
+cd hackathon-app
+./setup.sh
 ```
- navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
-                                                 │
-                                                 ├──► API de l'équipe Data/IA (ngrok)  (DATA_AI_URL renseignée)
-                                                 └──► CSV de repli                     (DATA_AI_URL vide, ou Data/IA coupée)
-```
 
-| Dossier           | Rôle                                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------------------- |
-| `web/`            | Front React + TypeScript + Tailwind (Vite), scène 3D three.js ([0007](docs/adr/0007-front-react.md)).    |
-| `api/`            | API FastAPI + Python 3.13 (uv), rechargée à chaque modification.                                         |
-| `db/init/`        | Schéma de la base, joué au **premier** démarrage de la base.                                             |
-| `.devcontainer/`  | Conteneur `dev` pour VS Code / Zed (Node 24, Python 3.13, uv, git, `psql`).                              |
-| `docs/adr/`       | Les décisions d'architecture (ADR), dont le choix de FastAPI ([0004](docs/adr/0004-backend-fastapi.md)). |
-| `.agents/skills/` | Les skills des agents IA, dont le skill officiel FastAPI ([section 3](#3-coder-dans-le-dev-container)).  |
-| `AGENTS.md`       | Les consignes pour les agents IA (Claude Code, Codex…).                                                  |
+Puis ouvre http://localhost:5173. Le premier lancement prend quelques minutes (images Docker, dépendances).
+
+Sans `DATA_AI_URL` dans `api/.env`, l'app tourne quand même, avec des données de repli (voir [section 6](#6-données-dataia-et-csv-de-repli)).
 
 **Sommaire**
 
-1. [Prérequis](#1-prérequis)
-2. [Installation](#2-installation) : méthode 1 (à la main) ou méthode 2 (`setup.sh`)
-3. [Coder dans le dev container](#3-coder-dans-le-dev-container)
-4. [Les données : API Data/IA et CSV de repli](#4-les-données--api-dataia-et-csv-de-repli)
-5. [Commandes utiles](#5-commandes-utiles)
-6. [Dépannage](#6-dépannage)
-7. [Sécurité](#7-sécurité)
-
-> 💡 **Où lancer quoi ?** Ce projet a deux terminaux possibles : celui de **ta machine** (l'hôte) et celui du **dev container**. Ils ne servent pas à la même chose.
->
-> | Terminal                            | Pour                                                                 |
-> | ----------------------------------- | -------------------------------------------------------------------- |
-> | Ta machine (hôte)                   | `./setup.sh`, `docker compose …`                                     |
-> | Dev container (`node@…:/workspace`) | Coder : `npm run lint`, `uv run pytest` (dans `api/`), `git`, `psql` |
+1. [Ce que fait l'application](#1-ce-que-fait-lapplication)
+2. [Installation](#2-installation)
+3. [Hôte ou dev container : où lancer quoi](#3-hôte-ou-dev-container--où-lancer-quoi)
+4. [Coder dans le dev container](#4-coder-dans-le-dev-container)
+5. [Architecture](#5-architecture)
+6. [Données Data/IA et CSV de repli](#6-données-dataia-et-csv-de-repli)
+7. [Déploiement sur Vercel](#7-déploiement-sur-vercel)
+8. [Tâches courantes](#8-tâches-courantes)
+9. [Qualité du code et CI](#9-qualité-du-code-et-ci)
+10. [Dépannage](#10-dépannage)
+11. [Sécurité](#11-sécurité)
 
 ---
 
-## 1. Prérequis
+## 1. Ce que fait l'application
 
-<details>
-<summary><b>Ce qu'il faut installer sur ta machine</b></summary>
+Trois vues, une seule app React :
 
-<br>
+| Vue            | URL                 | Pour qui         | Ce qu'on y fait                                                                                                             |
+| -------------- | ------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Magasin 3D** | `/` (à l'arrivée)   | Équipes Givaudan | Parcourir les rayons, scanner un produit pour voir ses familles d'arômes. **Tab** ouvre le dashboard.                       |
+| **Dashboard**  | `/` (touche Tab)    | Équipes Givaudan | KPI, liste des arômes (filtres, tri), fiche d'un arôme (séries, signaux, analyse), simulation, signalement, liens showroom. |
+| **Showroom**   | `/showroom/{jeton}` | Clients          | Vue client seule, ouverte par un lien à durée limitée et révocable ([ADR 0010](docs/adr/0010-liens-showroom.md)).           |
 
-| Outil                                                           | Obligatoire ?               | Vérification             |
-| --------------------------------------------------------------- | --------------------------- | ------------------------ |
-| [Docker](https://docs.docker.com/get-docker/) + Compose v2      | Oui                         | `docker compose version` |
-| Git                                                             | Oui                         | `git --version`          |
-| VS Code (extension _Dev Containers_) ou [Zed](https://zed.dev/) | Non, pour coder dans Docker |                          |
+Toutes les données passent par notre API (`/api/v1/...`), documentée dans le Swagger : http://localhost:3000/api/docs.
 
-Ni Node ni Python ne sont nécessaires sur ta machine : tout tourne dans les conteneurs.
-
-</details>
+| Domaine    | Routes                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| Santé      | `GET /health`                                                                              |
+| Dashboard  | `GET /dashboard/summary`, `GET /families`, `GET /product-types`                            |
+| Tendances  | `GET /trends`, `GET /trends/{trend_id}`                                                    |
+| Rapport    | `GET /report`, `GET /report/trends/{trend_id}`, `GET /report/model`, `POST /report/issues` |
+| Simulation | `POST /simulate`                                                                           |
+| Showroom   | `POST/GET /showroom/links`, `DELETE /showroom/links/{link_id}`, `GET /showroom/{token}`    |
 
 ---
 
 ## 2. Installation
 
-Deux méthodes, au choix. Le résultat est le même : toute la stack tourne en arrière-plan.
+### Prérequis
 
-> Les deux se lancent **depuis un terminal de ta machine**, à la racine du projet. Pas depuis le dev container.
+| Outil                                                           | Obligatoire ?                         | Vérifier avec            |
+| --------------------------------------------------------------- | ------------------------------------- | ------------------------ |
+| [Docker](https://docs.docker.com/get-docker/) + Compose v2      | Oui                                   | `docker compose version` |
+| Git                                                             | Oui                                   | `git --version`          |
+| VS Code (extension _Dev Containers_) ou [Zed](https://zed.dev/) | Non, seulement pour coder dans Docker |                          |
 
-```bash
-git clone https://github.com/Hetic-Hackathon-Givaudan-2026-Fischer/hackathon-app.git
-cd hackathon-app
-```
+**Ni Node ni Python** ne sont nécessaires sur ta machine : tout tourne dans les conteneurs.
 
-<details>
-<summary><b>Méthode 1 : installation classique, étape par étape</b></summary>
-
-<br>
-
-**1. Créer la configuration de l'API**
-
-```bash
-cp api/.env.example api/.env
-```
-
-`api/.env.example` pointe déjà sur l'API Data/IA ; voir [section 4](#4-les-données--api-dataia-et-csv-de-repli).
-
-**2. Démarrer la stack**
-
-```bash
-docker compose up -d --wait api web
-```
-
-`db` et `install` démarrent automatiquement avant. Au premier lancement, Docker télécharge les images, construit celle de l'API (dépendances Python) et `install` fait un `npm ci` : compte quelques minutes.
-
-**3. Vérifier**
-
-```bash
-docker compose ps
-```
-
-`api`, `web` et `db` doivent être `healthy`. Puis ouvre les [URLs ci-dessous](#ce-qui-tourne-une-fois-lancé).
-
-</details>
-
-<details>
-<summary><b>Méthode 2 : en une commande avec <code>setup.sh</code></b></summary>
-
-<br>
+### Méthode recommandée : `setup.sh`
 
 ```bash
 ./setup.sh
 ```
 
-Le script fait les mêmes étapes que la méthode 1, avec des vérifications en plus. Il est **relançable sans risque** : ce qui est déjà fait est sauté.
+Le script est **relançable sans risque** : ce qui est déjà fait est sauté. Sous Windows, lance-le depuis **Git Bash** ou **WSL**.
 
 | Étape         | Ce que fait le script                                                               |
 | ------------- | ----------------------------------------------------------------------------------- |
-| Hôte          | Refuse de tourner dans un conteneur (il faut le lancer depuis ta machine).          |
+| Hôte          | Refuse de tourner dans un conteneur : il faut le lancer depuis ta machine.          |
 | Docker        | Vérifie que Docker est installé, que le démon répond et que Compose v2 est présent. |
 | Configuration | Crée `api/.env` à partir de `api/.env.example` s'il n'existe pas.                   |
 | Données       | Indique si `DATA_AI_URL` est renseignée (sinon : CSV de repli, sans modèle).        |
 | Ports         | Vérifie que 3000, 5173 et 5433 sont libres (sauf si la stack tourne déjà).          |
 | Démarrage     | `docker compose up -d --wait api web`, puis attend que tout soit sain.              |
 
-Sous Windows : lance-le depuis **Git Bash** ou **WSL**.
+### Méthode manuelle : les mêmes étapes, sans vérifications
 
-</details>
+```bash
+cp api/.env.example api/.env           # 1. configuration de l'API
+docker compose up -d --wait api web    # 2. démarre db, install, api, web
+docker compose ps                      # 3. api, web et db doivent être « healthy »
+```
 
 ### Ce qui tourne une fois lancé
 
-| URL                                 | Quoi                                                        |
-| ----------------------------------- | ----------------------------------------------------------- |
-| http://localhost:5173               | Le front                                                    |
-| http://localhost:3000/api/v1/health | Santé de l'API, de la base et de l'API Data/IA              |
-| http://localhost:3000/api/docs      | Swagger : la documentation des routes, testables en un clic |
-| http://localhost:5173/api/docs      | Le même Swagger, à travers le proxy du front                |
-| `localhost:5433` (user/mdp `app`)   | PostgreSQL (TablePlus, DBeaver, psql…)                      |
+| Adresse                             | Quoi                                              |
+| ----------------------------------- | ------------------------------------------------- |
+| http://localhost:5173               | Le front                                          |
+| http://localhost:3000/api/docs      | Swagger : toutes les routes, testables en un clic |
+| http://localhost:3000/api/v1/health | Santé de l'API, de la base et de l'API Data/IA    |
+| http://localhost:5173/api/...       | La même API, à travers le proxy du front          |
+| `localhost:5433` (user / mdp `app`) | PostgreSQL, pour TablePlus, DBeaver, `psql`…      |
 
 ---
 
-## 3. Coder dans le dev container
+## 3. Hôte ou dev container : où lancer quoi
 
-Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node, Python, uv, git, `psql`, ESLint, Prettier et ruff déjà configurés. Il démarre la stack tout seul s'il le faut.
+Le projet a **deux terminaux**, qui ne servent pas à la même chose :
 
-À la création, le conteneur installe les dépendances Python dans `api/.venv` (`uv sync`). `pyrightconfig.json`, à la racine, indique ce venv et le dossier `api/` à l'analyse Python de l'éditeur (basedpyright dans Zed, Pylance dans VS Code) : sans lui, les imports de `app` et de FastAPI apparaissent en erreur.
+| Terminal                                       | Sert à                  | Commandes                                                  |
+| ---------------------------------------------- | ----------------------- | ---------------------------------------------------------- |
+| **Ta machine** (l'hôte)                        | Piloter Docker          | `./setup.sh`, `docker compose …`, `vercel …`               |
+| **Dev container** (invite `node@…:/workspace`) | Coder, tester, commiter | `npm run …`, `uv run …` (dans `api/`), `git`, `gh`, `psql` |
+
+Le dev container n'a **pas** accès à Docker, volontairement : ce serait un accès root à ta machine. Pour savoir où tu es :
+
+```bash
+whoami   # « node » dans le dev container
+pwd      # « /workspace » dans le dev container
+```
+
+---
+
+## 4. Coder dans le dev container
+
+Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node 24, Python 3.13, uv, git, `psql`, ESLint, Prettier et ruff déjà configurés. Il démarre la stack tout seul si besoin.
+
+À la création, le conteneur installe les dépendances Python dans `api/.venv` (`uv sync`) et active le hook pre-commit. `pyrightconfig.json` indique ce venv à l'éditeur (Pylance, basedpyright) : sans lui, les imports de FastAPI apparaissent en erreur.
 
 <details>
 <summary><b>VS Code</b></summary>
@@ -149,8 +139,6 @@ Optionnel, mais recommandé : l'éditeur s'attache au conteneur `dev`, avec Node
 1. Ouvre le dossier `hackathon-app`.
 2. Palette (`Ctrl+Shift+P`) → _Dev Containers: Reopen in Container_.
 
-VS Code démarre la stack et s'attache au service `dev`.
-
 </details>
 
 <details>
@@ -158,20 +146,20 @@ VS Code démarre la stack et s'attache au service `dev`.
 
 <br>
 
-1. Ouvre **le dossier `hackathon-app` lui-même**, pas son dossier parent : Zed ne cherche `.devcontainer/` qu'à la racine du projet ouvert.
+1. Ouvre **le dossier `hackathon-app` lui-même**, pas son parent : Zed ne cherche `.devcontainer/` qu'à la racine du projet ouvert.
    ```bash
    zed chemin/vers/hackathon-app
    ```
 2. Clique sur la notification _Open in Container_, ou palette (`Ctrl+Shift+P`) → _Open Dev Container_.
 
-C'est bon quand le nom **Hackathon** apparaît en haut à gauche et que la racine du projet s'appelle **workspace**.
+C'est bon quand **Hackathon** s'affiche en haut à gauche et que la racine du projet s'appelle **workspace**.
 
 Après une modification de `.devcontainer/`, Zed ne reconstruit pas tout seul : `docker compose down` depuis ta machine, puis rouvre dans le conteneur.
 
 </details>
 
 <details>
-<summary><b>Terminal seul, sans éditeur</b></summary>
+<summary><b>Sans éditeur, dans un terminal</b></summary>
 
 <br>
 
@@ -183,9 +171,55 @@ docker compose exec dev bash
 </details>
 
 <details>
-<summary><b>Structure de l'API</b> (<code>api/app/</code>)</summary>
+<summary><b>Avec un agent IA (Claude Code, Codex…)</b></summary>
 
 <br>
+
+`AGENTS.md` donne aux agents les règles du dépôt (Claude Code le lit via `CLAUDE.md`). Pour le code FastAPI, il les renvoie au **skill officiel de FastAPI**, dans `.agents/skills/fastapi/` (`SKILL.md` pour les conventions, `references/` pour le détail).
+
+| Agent       | Comment l'utiliser                                                                     |
+| ----------- | -------------------------------------------------------------------------------------- |
+| Codex       | Il découvre seul `.agents/skills/` ; pour le forcer, écris `$fastapi` dans ta demande. |
+| Claude Code | Précise-le dans ta demande : « en suivant `.agents/skills/fastapi` ».                  |
+| Humain      | Le skill se lit comme une doc : commence par la _Quick Reference_ de `SKILL.md`.       |
+
+**Les ADR l'emportent sur le skill.** Là où le skill contredit un ADR « acceptée », l'ADR gagne :
+
+| Le skill conseille                      | Ce dépôt fait                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| SQLModel                                | SQLAlchemy async + asyncpg ([ADR 0004](docs/adr/0004-backend-fastapi.md)).     |
+| Lancer l'API avec `fastapi dev`         | `uvicorn --reload`, lancé par `docker compose` (`api/Dockerfile`).             |
+| Ajouter une bibliothèque (Asyncer, ty…) | Lire d'abord `docs/adr/` ; un changement de composant passe par un nouvel ADR. |
+
+</details>
+
+---
+
+## 5. Architecture
+
+```
+ navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
+                                                 │
+                                                 ├──► API de l'équipe Data/IA (ngrok)  si DATA_AI_URL est renseignée
+                                                 └──► CSV de repli                     si DATA_AI_URL est vide, ou Data/IA coupée
+```
+
+### Le dépôt
+
+| Dossier / fichier         | Contenu                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| `web/`                    | Front React + TypeScript + Tailwind (Vite), scène 3D three.js.                    |
+| `api/`                    | API FastAPI + Python 3.13 (uv).                                                   |
+| `db/init/`                | Schéma de la base, joué **au premier démarrage seulement**.                       |
+| `openapi.yaml`            | Contrat de notre API, généré depuis FastAPI ; les types du front en sont générés. |
+| `docs/data/swagger-data/` | Contrat de l'API Data/IA (`openapi.json`, v1.2.0).                                |
+| `docs/adr/`               | Les décisions d'architecture (ADR) : **à lire avant de changer un composant**.    |
+| `vercel.json`             | Déploiement Vercel ([section 7](#7-déploiement-sur-vercel)).                      |
+| `.devcontainer/`          | Le conteneur `dev`.                                                               |
+| `.github/workflows/`      | La CI ([section 9](#9-qualité-du-code-et-ci)).                                    |
+| `AGENTS.md`, `.agents/`   | Consignes et skills des agents IA.                                                |
+
+### L'API (`api/app/`)
 
 ```
 api/app/
@@ -196,140 +230,172 @@ api/app/
 ├── schemas/             # les entrées et sorties de l'API (Pydantic)
 ├── repositories/        # les requêtes SQL
 ├── clients/             # API Data/IA, CSV de repli, bascule entre les deux
-├── services/            # la logique métier
+├── services/            # la logique métier ; ports.py = les interfaces (Protocol)
 └── api/
-    ├── deps.py          # l'injection : choisit base, sources de données, services
+    ├── deps.py          # l'injection : le SEUL endroit qui choisit les implémentations
     └── v1/
         ├── router.py    # regroupe les endpoints de la v1
-        └── endpoints/   # health, dashboard, trends, report, showroom
+        └── endpoints/   # health, dashboard, trends, report, showroom, simulation
 ```
 
-Les règles, pour les humains comme pour les agents IA :
+Règles ([ADR 0004](docs/adr/0004-backend-fastapi.md)) :
 
-- un endpoint reste mince : il reçoit un schéma, appelle un service, renvoie un schéma ;
-- la logique métier va dans `services/`, les requêtes SQL dans `repositories/` ;
-- tout accès externe (base, IA) passe par `api/deps.py` : en test, on le remplace sans toucher au code ;
-- une nouvelle version d'API se crée à côté (`api/v2/`), sans casser la v1 ;
-- pour l'écriture FastAPI elle-même (`Annotated`, types de retour, routers…), on suit le skill FastAPI (`.agents/skills/fastapi/`, voir ci-dessous).
+- **Endpoint mince** : il reçoit un schéma, appelle un service, renvoie un schéma. Jamais de SQL ni de logique métier dedans.
+- **Logique métier** dans `services/`, **requêtes SQL** dans `repositories/`.
+- **Tout accès externe** (base, Data/IA) passe par `api/deps.py` : en test, on le remplace sans toucher au code.
+- **Nouvelle version d'API** : à côté (`api/v2/`), sans casser la v1.
 
-Le schéma de la base reste dans `db/init/*.sql`. Le pourquoi de ces choix : [ADR 0004](docs/adr/0004-backend-fastapi.md).
+### Le front (`web/src/`)
 
-</details>
+| Dossier       | Contenu                                                                          |
+| ------------- | -------------------------------------------------------------------------------- |
+| `components/` | Composants React (dashboard, immersive, showroom) ; jamais d'import de `three`.  |
+| `engine/`     | Moteur three.js du magasin 3D ; entrée unique `createExperience`.                |
+| `hooks/`      | Le pont React ↔ moteur (`useExperience`) et les appels à l'API.                  |
+| `api/`        | Seul accès réseau : client `openapi-fetch`, types générés depuis `openapi.yaml`. |
+| `immersive/`  | Lien entre un rayon 3D et les familles d'arômes, fiche affichée au scan.         |
+| `lib/`        | Mise en forme partagée (nombres, dates, familles, origine des données).          |
 
-<details>
-<summary><b>Coder avec un agent IA : le skill FastAPI</b></summary>
+Le pourquoi : [ADR 0007](docs/adr/0007-front-react.md) (React + three.js) et [ADR 0012](docs/adr/0012-types-front-openapi.md) (types générés).
 
-<br>
+### Les tests (`api/tests/`)
 
-`AGENTS.md` donne aux agents IA les règles du dépôt (Claude Code le lit via `CLAUDE.md`). Pour le code FastAPI, il les renvoie au **skill officiel de FastAPI**, versionné dans `.agents/skills/fastapi/` :
+| Niveau         | Teste               | Avec                                                          |
+| -------------- | ------------------- | ------------------------------------------------------------- |
+| `unit/`        | Services et clients | Des faux (`tests/fakes.py`)                                   |
+| `api/`         | Les routes          | Dépendances remplacées (`app.dependency_overrides`)           |
+| `integration/` | Les repositories    | Un vrai PostgreSQL ; sautés si `TEST_DATABASE_URL` est absent |
 
-| Fichier           | Contenu                                                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------- |
-| `SKILL.md`        | Les conventions : `Annotated`, types de retour, routers, async ou sync, streaming…        |
-| `references/*.md` | Le détail : dépendances, réponses, modèles de paramètres, Pydantic, streaming, outillage. |
+L'API Data/IA n'est jamais appelée en test : ses réponses sont enregistrées dans `tests/fixtures/data_ai/`.
 
-Pour s'en servir :
+---
 
-| Agent       | Comment                                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Codex       | Il découvre seul les skills de `.agents/skills/` ; pour le forcer, mentionne `$fastapi` dans ta demande.           |
-| Claude Code | `AGENTS.md` lui demande de suivre le skill : précise-le dans ta demande (« en suivant `.agents/skills/fastapi` »). |
-| Humain      | Le skill se lit comme une doc : commence par la _Quick Reference_ de `SKILL.md`.                                   |
+## 6. Données Data/IA et CSV de repli
 
-> ⚠️ **Les ADR l'emportent sur le skill.** Le skill est générique ; là où il contredit un ADR « acceptée », c'est l'ADR qui gagne :
->
-> | Le skill conseille                      | Ce dépôt fait                                                                  |
-> | --------------------------------------- | ------------------------------------------------------------------------------ |
-> | SQLModel plutôt que SQLAlchemy          | SQLAlchemy async + asyncpg ([ADR 0004](docs/adr/0004-backend-fastapi.md)).     |
-> | Lancer l'API avec `fastapi dev`         | `uvicorn --reload`, lancé par `api/Dockerfile` : passe par `docker compose`.   |
-> | Ajouter une bibliothèque (Asyncer, ty…) | Lire d'abord `docs/adr/` ; un changement de composant passe par un nouvel ADR. |
+L'API lit les tendances d'arômes chez l'équipe Data/IA. Quand elle ne répond pas, elle **bascule automatiquement** sur un CSV ([ADR 0008](docs/adr/0008-source-tendances-repli.md)).
 
-</details>
+| `DATA_AI_URL` dans `api/.env` | Données servies                                                                    |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| Renseignée                    | API Data/IA (statuts, scores, séries). Si elle est coupée (timeout, `5xx`…) : CSV. |
+| Vide                          | CSV de repli (`api/app/data/`) : indicateurs bruts, sans modèle.                   |
 
-<details>
-<summary><b>Vérifier que je suis bien dans le conteneur</b></summary>
+**Comment savoir d'où viennent les données ?**
 
-<br>
+- Chaque réponse porte `origin` (`data_ai` ou `csv_fallback`) et `data_date`.
+- `GET /api/v1/health` donne l'état de Data/IA : `up`, `down` ou `non_configuree`.
 
-Dans le terminal de l'éditeur :
+**Ce qui manque en repli CSV** (le reste se calcule chez nous à l'identique : filtres, tri, pagination, KPI) :
+
+| Donnée / route                | Avec Data/IA                     | En repli CSV              |
+| ----------------------------- | -------------------------------- | ------------------------- |
+| `status`, `score`, `analysis` | Renseignés                       | `null`                    |
+| `product_types` d'un arôme    | Renseignés                       | Vide                      |
+| `GET /api/v1/report/model`    | Métriques du modèle              | `200`, `available: false` |
+| `POST /api/v1/simulate`       | Probabilité d'une hausse durable | `503`                     |
+
+L'explication rédigée par le LLM de Data/IA (`/trends/{id}/insight`) n'est **pas** relayée ([ADR 0014](docs/adr/0014-insight-ia-generative.md)).
+
+### Quand le tunnel ngrok change d'URL
+
+L'URL change à chaque relance du tunnel par l'équipe Data/IA :
+
+1. Mets la nouvelle URL dans `api/.env` (`DATA_AI_URL`).
+2. Depuis ta machine : `docker compose restart api`.
+
+Si l'équipe Data/IA protège son API, mets sa clé dans `DATA_AI_KEY` (envoyée dans l'en-tête `X-API-Key`). Cette clé se transmet **hors de git**.
+
+### Toutes les variables de `api/.env`
+
+| Variable                  | Rôle                                                   | Défaut                  |
+| ------------------------- | ------------------------------------------------------ | ----------------------- |
+| `DATABASE_URL`            | Connexion PostgreSQL (`postgres://…` suffit).          | La base de Compose      |
+| `DATA_AI_URL`             | URL de l'API Data/IA ; vide = CSV seul.                | Vide                    |
+| `DATA_AI_KEY`             | Clé de l'API Data/IA, si elle en demande une.          | Vide                    |
+| `DATA_AI_TIMEOUT_SECONDS` | Délai au-delà duquel Data/IA est jugée injoignable.    | `5`                     |
+| `PUBLIC_WEB_URL`          | URL du front, utilisée dans les liens showroom.        | `http://localhost:5173` |
+| `SHOWROOM_LINK_TTL_HOURS` | Durée de vie par défaut d'un lien showroom, en heures. | `72`                    |
+
+---
+
+## 7. Déploiement sur Vercel
+
+Front et API sont **un seul projet Vercel**, en deux services, derrière **un seul domaine** ([ADR 0013](docs/adr/0013-deploiement-vercel.md)) :
+
+| Service | Dossier | Répond sur | Contenu                                                                  |
+| ------- | ------- | ---------- | ------------------------------------------------------------------------ |
+| `api`   | `api/`  | `/api/*`   | FastAPI. Vercel ne retire pas le préfixe : les routes gardent `/api`.    |
+| `web`   | `web/`  | `/*`       | Build Vite statique ; toute autre URL (`/showroom/…`) sert `index.html`. |
+
+Le front appelle l'API sur le même domaine (`/api/v1/...`) : pas de CORS. Le proxy de `vite.config.ts` ne sert qu'en dev.
+
+> ⚠️ Sur Vercel, le dashboard interne et le Swagger sont **publics**. N'y mets pas de données sensibles tant qu'aucune protection (Vercel Authentication, auth applicative) n'est en place.
+
+### Déployer (depuis ta machine, avec la CLI Vercel)
+
+**1. Préparer une base PostgreSQL hébergée.** Vercel n'en fournit pas. Une fois la base créée, joue le schéma à la main :
 
 ```bash
-whoami   # node
-pwd      # /workspace
+for f in db/init/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 ```
 
-| Commande                | Dev container ?  | Pourquoi                                                            |
-| ----------------------- | ---------------- | ------------------------------------------------------------------- |
-| `npm run lint / format` | ✅               | Node et les dépendances sont dans le conteneur.                     |
-| `uv run pytest`         | ✅ (dans `api/`) | Python, uv et le venv `api/.venv` sont dans le conteneur.           |
-| `uv run ruff check`     | ✅ (dans `api/`) | Lint Python ; `uv run ruff format` pour la forme.                   |
-| `git`, `gh`, `psql`     | ✅               | Installés dans l'image `dev`.                                       |
-| `./setup.sh`            | ❌ → hôte        | Il pilote le Docker de ta machine.                                  |
-| `docker compose …`      | ❌ → hôte        | Pas de Docker dans le conteneur (ce serait un accès root à l'hôte). |
+**2. Définir les variables dans Vercel** (Settings → Environment Variables, ou `vercel env add`). Jamais dans le dépôt, ni dans `vercel.json` :
 
-</details>
+| Variable         | Valeur                                                                     |
+| ---------------- | -------------------------------------------------------------------------- |
+| `DATABASE_URL`   | L'URL de la base hébergée.                                                 |
+| `PUBLIC_WEB_URL` | Le domaine Vercel. Sans elle, les liens showroom pointent sur `localhost`. |
+| `DATA_AI_URL`    | L'API Data/IA (vide : CSV seul).                                           |
+| `DATA_AI_KEY`    | Sa clé, si besoin.                                                         |
 
----
+**3. Déployer**
 
-## 4. Les données : API Data/IA et CSV de repli
+```bash
+vercel link            # une seule fois : relie le dossier au projet (crée .vercel/, ignoré par git)
+vercel deploy          # déploiement de preview
+vercel deploy --prod   # déploiement de production
+```
 
-L'API lit les tendances d'arômes chez l'équipe Data/IA, et bascule sur un CSV quand elle ne répond pas ([ADR 0008](docs/adr/0008-source-tendances-repli.md)) :
-
-| `DATA_AI_URL` dans `api/.env` | Données servies                                                                   |
-| ----------------------------- | --------------------------------------------------------------------------------- |
-| renseignée                    | API Data/IA : statuts, scores, séries ; CSV si elle est coupée (timeout, `5xx`…). |
-| vide                          | CSV de repli (`api/app/data/`) : indicateurs bruts, sans modèle.                  |
-
-Chaque réponse porte `origin` (`data_ai` ou `csv_fallback`) et `data_date`. L'état de l'API Data/IA est dans `/api/v1/health` (`data_ai`).
-
-L'URL du tunnel ngrok change quand l'équipe Data/IA le relance : mets la nouvelle dans `api/.env` (`DATA_AI_URL`), puis `docker compose restart api`. Si elle protège son API, ajoute sa clé dans `DATA_AI_KEY` (en-tête `X-API-Key`), transmise **hors de git**.
+`.vercelignore` exclut de l'envoi `db/data`, les `.env`, `node_modules` et les venv.
 
 ---
 
-## 5. Commandes utiles
+## 8. Tâches courantes
 
-<details>
-<summary><b>Docker : gérer la stack</b> (depuis ta machine)</summary>
+| Je veux…                                            | Commande                                                 | Où                    |
+| --------------------------------------------------- | -------------------------------------------------------- | --------------------- |
+| Voir l'état des services                            | `docker compose ps`                                      | Hôte                  |
+| Lire les logs de l'API                              | `docker compose logs -f api` (ou `web`, `db`, `install`) | Hôte                  |
+| Prendre en compte un changement de `api/.env`       | `docker compose restart api`                             | Hôte                  |
+| Prendre en compte un changement de `api/Dockerfile` | `docker compose up -d --build api`                       | Hôte                  |
+| Tout arrêter                                        | `docker compose down`                                    | Hôte                  |
+| Ouvrir une console SQL                              | `docker compose exec db psql -U app app`                 | Hôte                  |
+| Lancer les tests de l'API                           | `uv run pytest`                                          | Dev container, `api/` |
 
-<br>
+### Ajouter une dépendance Python
 
-| Commande                                 | Effet                                      |
-| ---------------------------------------- | ------------------------------------------ |
-| `docker compose ps`                      | État des services                          |
-| `docker compose logs -f api`             | Logs de l'API (ou `web`, `db`, `install`)  |
-| `docker compose restart api`             | Après une modification de `api/.env`       |
-| `docker compose up -d --build api`       | Après une modification de `api/Dockerfile` |
-| `docker compose down`                    | Tout arrêter                               |
-| `docker compose exec db psql -U app app` | Console SQL                                |
-
-</details>
-
-<details>
-<summary><b>Ajouter une dépendance Python</b> (dans le dev container, dossier <code>api/</code>)</summary>
-
-<br>
+Dans le dev container :
 
 ```bash
 cd api
-uv add <paquet>          # ou : uv add --dev <paquet> pour un outil de dev
+uv add <paquet>          # ou uv add --dev <paquet> pour un outil de dev
 ```
 
-`uv` met à jour `api/pyproject.toml` et `api/uv.lock` : commite les deux. Puis, depuis ta machine :
+Commite `api/pyproject.toml` **et** `api/uv.lock`. Puis, depuis ta machine : `docker compose restart api`. Au redémarrage, l'API installe ce qui manque. Les coéquipiers n'ont qu'à faire `git pull` et ce même redémarrage.
+
+### Après un changement de schéma Pydantic
+
+Les types du front ne s'écrivent **jamais** à la main ([ADR 0012](docs/adr/0012-types-front-openapi.md)). Dans le dev container :
 
 ```bash
-docker compose restart api
+cd api && uv run python -m app.scripts.export_openapi   # 1. régénère openapi.yaml
+cd .. && npm run gen:api                                # 2. régénère web/src/api/schema.d.ts
 ```
 
-Au démarrage, l'API installe ce qui manque d'après `uv.lock` (`uv run --locked`). Les coéquipiers n'ont rien d'autre à faire qu'un `git pull` et ce redémarrage.
+Commite les deux fichiers : la CI échoue s'ils ne correspondent plus au code.
 
-</details>
+### Réinitialiser la base
 
-<details>
-<summary><b>Réinitialiser la base</b> (rejoue <code>db/init/*.sql</code>)</summary>
-
-<br>
-
-Depuis ta machine :
+`db/init/*.sql` n'est joué qu'au **premier** démarrage de la base. Pour tout rejouer (⚠️ efface les données), depuis ta machine :
 
 ```bash
 docker compose down
@@ -337,85 +403,92 @@ rm -rf db/data
 ./setup.sh
 ```
 
-Les données vivent dans `db/data/` (dossier monté, pas un volume) : `docker compose down -v` ne les efface pas. Pour ajouter un nouveau fichier `db/init/*.sql` sans tout perdre, joue-le à la main :
+Les données vivent dans le dossier `db/data/`, pas dans un volume : `docker compose down -v` ne les efface **pas**.
+
+Pour jouer un seul nouveau fichier sans rien perdre :
 
 ```bash
 docker compose exec -T db psql -U app -d app -v ON_ERROR_STOP=1 < db/init/004-showroom.sql
 ```
 
-</details>
+---
 
-<details>
-<summary><b>Qualité du code : ESLint, Prettier, ruff, pytest et hook pre-commit</b> (depuis le dev container)</summary>
+## 9. Qualité du code et CI
 
-<br>
+| Outil        | Rôle                                                                       |
+| ------------ | -------------------------------------------------------------------------- |
+| **ESLint**   | Front : erreurs probables (variable inutilisée, promesse oubliée, `any`…). |
+| **Prettier** | Front et docs : la forme (guillemets, indentation, retours à la ligne).    |
+| **ruff**     | API : lint et formatage du Python.                                         |
+| **pytest**   | API : tests des services, des routes et des repositories.                  |
+| **husky**    | À chaque commit : ESLint, Prettier et ruff sur les fichiers indexés.       |
 
-| Outil        | Rôle                                                                                                       |
-| ------------ | ---------------------------------------------------------------------------------------------------------- |
-| **ESLint**   | Front : détecte les erreurs probables (variable inutilisée, promesse oubliée, `any`…).                     |
-| **Prettier** | Front et docs : s'occupe de la forme (guillemets, indentation, retours à la ligne).                        |
-| **ruff**     | API : lint et formatage du Python.                                                                         |
-| **pytest**   | API : tests des services et des routes, base et IA simulées.                                               |
-| **husky**    | À chaque commit, lance **lint-staged** sur les fichiers indexés : ESLint et Prettier, ruff pour les `.py`. |
+Dans VS Code et Zed, le dev container formate à l'enregistrement.
 
-Le dev container les branche dans VS Code et Zed : formatage à l'enregistrement, corrections à la demande.
+### Avant d'ouvrir une pull request
 
-À la racine, dans le conteneur `dev` :
-
-```bash
-npm run lint           # ESLint sur le front
-npm run format         # Prettier réécrit les fichiers
-npm run format:check   # Prettier vérifie sans modifier (CI)
-```
-
-Dans `api/` :
+Dans le dev container, ces commandes doivent toutes passer :
 
 ```bash
-uv run ruff check      # lint Python (--fix pour corriger)
-uv run ruff format     # formatage Python
-uv run pytest          # tests de l'API
+# À la racine
+npm run lint           # ESLint
+npm run format:check   # Prettier, sans modifier (npm run format pour corriger)
+
+# Dans api/
+uv run ruff check      # lint (--fix pour corriger)
+uv run ruff format     # formatage
+uv run pytest          # tests
 ```
 
-Le hook pre-commit s'active à la création du dev container (script `prepare`). `db/data` (dossier de PostgreSQL) est exclu. Une règle ESLint qui ne convient pas à l'équipe se désactive dans `eslint.config.mjs`, avec un commentaire qui la justifie.
+### Ce que vérifie la CI
 
-</details>
+À chaque pull request, et à chaque push sur `main` ou `develop` :
+
+| Workflow       | Vérifie                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| `ci.yml`       | Front : ESLint, Prettier, types à jour, build. API : ruff, `openapi.yaml` à jour.           |
+| `tests.yml`    | `uv run pytest`.                                                                            |
+| `security.yml` | Scans de sécurité, dont l'image `prod` de l'API ([ADR 0005](docs/adr/0005-ci-securite.md)). |
+
+Une règle ESLint qui ne convient pas à l'équipe se désactive dans `eslint.config.mjs`, avec un commentaire qui la justifie.
 
 ---
 
-## 6. Dépannage
+## 10. Dépannage
 
-<details>
-<summary><b>Installation et dev container</b></summary>
+### Installation et dev container
 
-<br>
+| Symptôme                                                     | Cause et solution                                                                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `./setup.sh` → `Docker introuvable` dans `node@…:/workspace` | Tu es dans le dev container. Lance le script depuis un terminal de ta machine.                                |
+| Zed : `Failed to start dev container: NotInValidProject`     | Zed a ouvert le dossier parent. Ouvre `hackathon-app` lui-même ([section 4](#4-coder-dans-le-dev-container)). |
+| `port is already allocated`                                  | Un autre programme utilise 3000, 5173 ou 5433 : arrête-le, ou change le port dans `compose.yml`.              |
+| Un changement de `db/init/*.sql` n'est pas pris en compte    | Ces fichiers ne sont joués qu'au premier démarrage : [réinitialise la base](#réinitialiser-la-base).          |
 
-| Symptôme                                                     | Cause probable / solution                                                                                          |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `./setup.sh` → `Docker introuvable` dans `node@…:/workspace` | Tu es dans le dev container. Lance le script depuis un terminal de ta machine.                                     |
-| Zed : `Failed to start dev container: NotInValidProject`     | Zed a ouvert le dossier parent. Ouvre `hackathon-app` lui-même (voir [section 3](#3-coder-dans-le-dev-container)). |
-| `port is already allocated`                                  | Un autre programme utilise 3000, 5173 ou 5433 : arrête-le ou change le port dans `compose.yml`.                    |
-| Les modifications de `db/init/*.sql` ne sont pas prises      | Elles ne sont jouées qu'au premier démarrage : [réinitialise la base](#5-commandes-utiles).                        |
+### Données Data/IA
 
-</details>
+| Symptôme                                                 | Cause et solution                                                                       |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `origin: "csv_fallback"` et `/health` → `down`           | Le tunnel ngrok est coupé ou a changé d'URL : demande la nouvelle à l'équipe Data/IA.   |
+| `origin: "csv_fallback"` et `/health` → `non_configuree` | `DATA_AI_URL` est vide dans `api/.env`.                                                 |
+| Logs : `bascule sur le CSV : erreur HTTP 401`            | `DATA_AI_KEY` ne correspond pas à la clé de l'équipe Data/IA.                           |
+| Logs : `bascule sur le CSV : format inattendu`           | Data/IA a changé son format : adapter `api/app/clients/data_trends.py` et ses fixtures. |
+| `POST /simulate` → `503`                                 | Repli CSV : la simulation a besoin du modèle Data/IA.                                   |
 
-<details>
-<summary><b>Données Data/IA</b></summary>
+### Vercel
 
-<br>
-
-| Symptôme                                                 | Cause probable / solution                                                                        |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Réponses en `origin: "csv_fallback"`, `/health` → `down` | Le tunnel ngrok est coupé ou a changé d'URL : demande la nouvelle à l'équipe Data/IA.            |
-| `origin: "csv_fallback"`, `/health` → `non_configuree`   | `DATA_AI_URL` est vide dans `api/.env`.                                                          |
-| Logs : `bascule sur le CSV : erreur HTTP 401`            | `DATA_AI_KEY` (`api/.env`) ne correspond pas à la clé de l'équipe Data/IA.                       |
-| Logs : `bascule sur le CSV : format inattendu`           | L'équipe Data/IA a changé son format : adapter `api/app/clients/data_trends.py` et ses fixtures. |
-
-</details>
+| Symptôme                                    | Cause et solution                                                                         |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `404` sur une route de l'API                | Vercel ne retire pas le préfixe : toute route doit rester sous `/api`.                    |
+| Les liens showroom pointent sur `localhost` | `PUBLIC_WEB_URL` n'est pas définie dans les variables Vercel.                             |
+| Erreur de base au démarrage de l'API        | `DATABASE_URL` absente, ou schéma non joué : voir [section 7](#7-déploiement-sur-vercel). |
 
 ---
 
-## 7. Sécurité
+## 11. Sécurité
 
-- Les fichiers `.env` ne sont **jamais** commités (voir `.gitignore`). Seuls les `.env.example` le sont, sans vraie valeur.
-- Les identifiants PostgreSQL `app` / `app` de `compose.yml` sont des identifiants **de dev uniquement** (ports publiés sur `127.0.0.1`). Ne les réutilise pas en production.
-- Le dev container n'a volontairement pas accès à Docker : monter le socket Docker reviendrait à lui donner un accès root à ta machine.
+- **Jamais de `.env` dans git** (voir `.gitignore`). Seul `api/.env.example` est commité, sans vraie valeur.
+- **Sur Vercel**, les secrets vont dans les variables du projet, jamais dans `vercel.json` ni `.vercelignore`. `.vercel/` n'est pas commité.
+- **Identifiants PostgreSQL `app` / `app`** (`compose.yml`) : dev uniquement, ports publiés sur `127.0.0.1`. Ne les réutilise pas ailleurs.
+- **Liens showroom** : le jeton est stocké haché et n'apparaît jamais dans les logs ([ADR 0010](docs/adr/0010-liens-showroom.md)).
+- **Dev container sans Docker**, volontairement : monter le socket Docker donnerait un accès root à ta machine.

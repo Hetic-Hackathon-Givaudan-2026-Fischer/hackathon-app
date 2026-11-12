@@ -61,7 +61,7 @@ React + Tailwind pour l'interface, three.js impératif pour la scène ([ADR 0007
 | Dossier         | Rôle                                                                                                          |
 | --------------- | ------------------------------------------------------------------------------------------------------------- |
 | `components/`   | Composants React, classes Tailwind ; jamais d'import de `three`.                                              |
-| `hooks/`        | `useExperience` : monte / libère le moteur, expose son état à React.                                          |
+| `hooks/`        | `useExperience` (monte / libère le moteur) ; appels à l'API (`useTrendsApi`), filtres, raccourcis clavier.    |
 | `engine/`       | Moteur three.js ; entrée unique `createExperience`, libéré par `dispose`.                                     |
 | `engine/scene/` | Un dossier par élément de la scène, `index.ts` comme seule surface.                                           |
 | `api/`          | Seul accès réseau : client `openapi-fetch`, types générés ([ADR 0012](docs/adr/0012-types-front-openapi.md)). |
@@ -70,7 +70,8 @@ React + Tailwind pour l'interface, three.js impératif pour la scène ([ADR 0007
 
 - Types partagés du moteur : `engine/types.ts` ; outils canvas : `engine/scene/shared/canvas.ts`.
 - Types de l'API : jamais écrits à la main. Après un changement de schéma Pydantic : `export_openapi`, puis `npm run gen:api` (contrôlé en CI).
-- L'app s'ouvre sur le dashboard ; la vue immersive ne s'ouvre que depuis lui. Seule autre URL : `/showroom/{jeton}` (vue client seule, testée dans `main.tsx`).
+- L'app s'ouvre sur la vue immersive (magasin 3D) ; **Tab** bascule entre elle et le dashboard (`App.tsx`). Le dashboard reste monté (filtres conservés) ; le moteur 3D n'existe que pendant la visite.
+- Seule autre URL : `/showroom/{jeton}` (vue client seule, sans dashboard ni Tab), reconnue dans `main.tsx`.
 - Jetons de la charte : `@theme` dans `index.css`, alignés sur `brand.ts`.
 
 ## Tests
