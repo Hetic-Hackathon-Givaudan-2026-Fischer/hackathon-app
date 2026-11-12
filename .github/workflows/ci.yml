@@ -13,6 +13,8 @@ jobs:
     container: node:24-trixie
     steps:
       - uses: actions/checkout@v7
+      # Dans un conteneur, le dépôt appartient à un autre utilisateur : git le refuse sans ça
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
