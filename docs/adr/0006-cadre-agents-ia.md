@@ -38,6 +38,7 @@ Quel ADR lire avant de toucher à :
 | ---------------------------------------- | ------------------------------------------------- |
 | `api/.env`, sources de données           | [0008](0008-source-tendances-repli.md) (proposée) |
 | `compose.yml`, Dockerfile, dev container | [0002](0002-docker-compose.md)                    |
+| `vercel.json`, déploiement               | [0013](0013-deploiement-vercel.md) (proposée)     |
 | `api/tests/`, `tests.yml`                | [0003](0003-tests.md)                             |
 | `api/app/`, dépendances Python, base     | [0004](0004-backend-fastapi.md)                   |
 | `security.yml`, secrets                  | [0005](0005-ci-securite.md)                       |
