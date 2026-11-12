@@ -8,7 +8,8 @@ x-workspace: &workspace
   volumes:
     - .:/workspace:cached
   extra_hosts:
-    # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), pour Ollama
+    # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), par exemple
+    # pour une API Data/IA lancée en local (DATA_AI_URL=http://host.docker.internal:…)
     - host.docker.internal:host-gateway
 
 # Conteneurs Node (install, web, dev). Image officielle slim : rien à compiler

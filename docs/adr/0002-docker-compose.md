@@ -22,7 +22,7 @@ Option 3.
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [`compose.yml`](../../compose.yml)       | `db` (PostgreSQL 17), `install` (`npm ci`, `api/.env`), `api` (FastAPI), `web` (Vite), `dev`.    |
 | [`api/Dockerfile`](../../api/Dockerfile) | Image de l'API, venv dans `/opt/venv` ; cible `dev` (Compose, `uvicorn --reload`) et `prod`.     |
-| [`setup.sh`](../../setup.sh)             | Vérifie Docker, Ollama (mode 1), ports ; démarre la stack jusqu'à ce que tout soit sain.         |
+| [`setup.sh`](../../setup.sh)             | Vérifie Docker, `DATA_AI_URL`, ports ; démarre la stack jusqu'à ce que tout soit sain.           |
 | [`.devcontainer/`](../../.devcontainer/) | Option VS Code / Zed sur le service `dev` : Node 24, Python 3.13, uv, git, `psql`, ESLint, ruff. |
 
 Règles :
@@ -40,6 +40,6 @@ Règles :
 
 ## Conséquences
 
-- Positives : éditeur au choix ; Docker seul prérequis (plus Ollama en mode 1) ; Node 24, Python 3.13, PostgreSQL 17 partout.
-- Négatives : deux terminaux (machine : `docker compose`, `setup.sh`, `ollama` ; `dev` : `npm`, `uv`, `git`, `psql`) ; sans dev container, le hook pre-commit demande Node et uv sur la machine.
+- Positives : éditeur au choix ; Docker seul prérequis ; Node 24, Python 3.13, PostgreSQL 17 partout.
+- Négatives : deux terminaux (machine : `docker compose`, `setup.sh` ; `dev` : `npm`, `uv`, `git`, `psql`) ; sans dev container, le hook pre-commit demande Node et uv sur la machine.
 - À revoir si : toute l'équipe est sur VS Code ou Zed ; modifications non détectées via le montage (Windows hors WSL : polling pour uvicorn et Vite) ; déploiement (front et config à faire).

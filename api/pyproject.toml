@@ -1,7 +1,7 @@
 [project]
 name = "api"
 version = "0.1.0"
-description = "API du hackathon : questions posées à l'IA, stockées dans PostgreSQL"
+description = "API du hackathon : tendances d'arômes, rapport d'analyse, showroom"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi[standard]>=0.120",
