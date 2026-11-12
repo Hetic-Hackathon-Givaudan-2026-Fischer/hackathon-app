@@ -1,4 +1,4 @@
-"""Bascule entre deux sources de tendances, et métriques sans modèle joignable."""
+"""Bascule entre deux sources de tendances ; modèle absent sans API Data/IA."""
 
 import logging
 from collections.abc import Awaitable, Callable
@@ -7,6 +7,8 @@ from app.core.errors import DataSourceUnavailableError
 from app.services.ports import (
     DataStatus,
     ModelMetrics,
+    SimulationInput,
+    SimulationResult,
     Sourced,
     TrendRecord,
     TrendSource,
@@ -43,11 +45,24 @@ class FallbackTrendSource:
             return await call(self._fallback)
 
 
+NOT_CONFIGURED = "API Data/IA non configurée"
+
+
 class UnavailableModelMetrics:
     """ModelMetricsSource quand aucun modèle n'est joignable (DATA_AI_URL vide)."""
 
-    def __init__(self, reason: str = "API Data/IA non configurée") -> None:
+    def __init__(self, reason: str = NOT_CONFIGURED) -> None:
         self._reason = reason
 
     async def model_metrics(self) -> ModelMetrics:
+        raise DataSourceUnavailableError(self._reason)
+
+
+class UnavailableSimulator:
+    """PerennitySimulator sans API Data/IA : le CSV n'a pas de modèle (→ 503)."""
+
+    def __init__(self, reason: str = NOT_CONFIGURED) -> None:
+        self._reason = reason
+
+    async def simulate(self, inputs: SimulationInput) -> SimulationResult:
         raise DataSourceUnavailableError(self._reason)

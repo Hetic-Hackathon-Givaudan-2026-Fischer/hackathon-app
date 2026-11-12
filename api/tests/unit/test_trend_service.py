@@ -8,10 +8,11 @@ from app.services.trends import (
     filter_trends,
     fold,
     paginate,
+    product_type_stats,
     sort_trends,
     summarize,
 )
-from tests.fakes import FakeTrendSource, make_trend
+from tests.fakes import FakeTrendSource, make_trend, with_analysis, with_product_types
 
 ACAI = make_trend(
     "acai", "fruits", "buzz", 0.4, "Açaï",
@@ -109,3 +110,50 @@ async def test_service_keeps_origin_and_paginates() -> None:
     assert (ids(result.value.items), result.value.total) == (["mango"], 3)
     assert (await service.summary()).value.trend_count == 3
     assert len((await service.families()).value) == 2
+
+
+# Types de produits et indicateurs métier (Data/IA seulement)
+TYPED = [
+    with_analysis(with_product_types(ACAI, "boissons", "glaces"), 40, 70),
+    with_analysis(with_product_types(MANGO, "glaces"), 90),
+    CUMIN,
+]
+
+
+@pytest.mark.parametrize(
+    ("product_type", "expected"),
+    [("glaces", ["acai", "mango"]), ("boissons", ["acai"]), ("sauces", [])],
+)
+def test_filter_by_main_or_secondary_product_type(
+    product_type: str, expected: list[str]
+) -> None:
+    query = TrendQuery(product_type=product_type)
+
+    assert ids(filter_trends(TYPED, query)) == expected
+
+
+def test_sort_by_analysis_scores_puts_missing_last() -> None:
+    assert ids(sort_trends(TYPED, "buzz_score", True)) == ["mango", "acai", "cumin"]
+    assert ids(sort_trends(TYPED, "trend_score", True)) == ["acai", "mango", "cumin"]
+
+
+def test_product_type_stats_count_main_and_any() -> None:
+    stats = product_type_stats(iter(TYPED))
+
+    assert [(s.id, s.main_count, s.any_count) for s in stats] == [
+        ("glaces", 1, 2),
+        ("boissons", 1, 1),
+    ]
+
+
+def test_product_type_stats_empty_without_product_types() -> None:
+    assert product_type_stats(TRENDS) == []
+
+
+async def test_service_product_types_keep_origin() -> None:
+    service = TrendService(FakeTrendSource(TYPED, origin="data_ai"))
+
+    result = await service.product_types()
+
+    assert result.status.origin == "data_ai"
+    assert [stat.id for stat in result.value] == ["glaces", "boissons"]

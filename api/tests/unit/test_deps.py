@@ -8,11 +8,16 @@ from app.api.deps import (
     get_data_ai_http,
     get_data_ai_trend_source,
     get_model_metrics_source,
+    get_simulator,
     get_trend_source,
 )
 from app.clients.csv_trends import CsvTrendSource
-from app.clients.data_trends import DataTeamModelMetrics
-from app.clients.fallback import FallbackTrendSource, UnavailableModelMetrics
+from app.clients.data_trends import DataTeamModelMetrics, DataTeamSimulator
+from app.clients.fallback import (
+    FallbackTrendSource,
+    UnavailableModelMetrics,
+    UnavailableSimulator,
+)
 from app.core.config import Settings
 from app.services.ports import TrendSource
 
@@ -48,6 +53,8 @@ def test_model_metrics_source_follows_data_ai_url() -> None:
 
     assert isinstance(get_model_metrics_source(client), DataTeamModelMetrics)
     assert isinstance(get_model_metrics_source(None), UnavailableModelMetrics)
+    assert isinstance(get_simulator(client), DataTeamSimulator)
+    assert isinstance(get_simulator(None), UnavailableSimulator)
 
 
 def test_csv_source_is_read_once() -> None:

@@ -14,8 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clients.csv_trends import CsvTrendSource
 from app.clients.data_ai_http import DataAiHttp
-from app.clients.data_trends import DataTeamModelMetrics, DataTeamTrendSource
-from app.clients.fallback import FallbackTrendSource, UnavailableModelMetrics
+from app.clients.data_trends import (
+    DataTeamModelMetrics,
+    DataTeamSimulator,
+    DataTeamTrendSource,
+)
+from app.clients.fallback import (
+    FallbackTrendSource,
+    UnavailableModelMetrics,
+    UnavailableSimulator,
+)
 from app.clients.tokens import SecretsTokenGenerator
 from app.core.config import Settings, get_settings
 from app.repositories.data_issues import SqlDataIssueRepository
@@ -28,6 +36,7 @@ from app.services.ports import (
     DataIssueRepository,
     DataStatusSource,
     ModelMetricsSource,
+    PerennitySimulator,
     ShowroomLinkRepository,
     TokenGenerator,
     TrendSource,
@@ -37,6 +46,7 @@ from app.services.showroom import (
     ShowroomSettings,
     ShowroomViewService,
 )
+from app.services.simulation import SimulationService
 from app.services.traceability import TraceabilityService
 from app.services.trends import TrendService
 
@@ -112,6 +122,11 @@ def get_model_metrics_source(client: DataAiHttpDep) -> ModelMetricsSource:
     return DataTeamModelMetrics(client) if client else UnavailableModelMetrics()
 
 
+def get_simulator(client: DataAiHttpDep) -> PerennitySimulator:
+    """Sans Data/IA, aucun modèle : la simulation répond 503."""
+    return DataTeamSimulator(client) if client else UnavailableSimulator()
+
+
 TrendSourceDep = Annotated[TrendSource, Depends(get_trend_source)]
 
 
@@ -131,6 +146,15 @@ def get_traceability_service(
     metrics: Annotated[ModelMetricsSource, Depends(get_model_metrics_source)],
 ) -> TraceabilityService:
     return TraceabilityService(source, metrics)
+
+
+def get_simulation_service(
+    simulator: Annotated[PerennitySimulator, Depends(get_simulator)],
+) -> SimulationService:
+    return SimulationService(simulator)
+
+
+SimulationServiceDep = Annotated[SimulationService, Depends(get_simulation_service)]
 
 
 # --- Signalements et showroom -----------------------------------------------------

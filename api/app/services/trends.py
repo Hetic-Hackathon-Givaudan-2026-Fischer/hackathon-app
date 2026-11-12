@@ -13,7 +13,14 @@ from statistics import fmean
 from app.core.indicators import GROWTH_INDICATOR, INDICATOR_KEYS
 from app.services.ports import Sourced, TrendRecord, TrendSource
 
-SORT_FIELDS: tuple[str, ...] = ("name", "score", *INDICATOR_KEYS)
+# Scores des indicateurs métier Data/IA (`TrendAnalysis`), triables eux aussi
+ANALYSIS_SORT_FIELDS = ("buzz_score", "trend_score")
+SORT_FIELDS: tuple[str, ...] = (
+    "name",
+    "score",
+    *ANALYSIS_SORT_FIELDS,
+    *INDICATOR_KEYS,
+)
 # Indicateurs additionnés dans les KPI, s'ils sont fournis par la source
 SUMMED_INDICATORS = (
     "produits_total",
@@ -27,6 +34,7 @@ TOP_GROWING_SIZE = 5
 class TrendQuery:
     family: str | None = None
     status: str | None = None
+    product_type: str | None = None
     search: str | None = None
     sort: str = GROWTH_INDICATOR
     descending: bool = True
@@ -50,6 +58,16 @@ class FamilyStat:
 
 
 @dataclass(frozen=True, slots=True)
+class ProductTypeStat:
+    """Un type de produit : arômes dont c'est le type principal, ou l'un des types."""
+
+    id: str
+    label: str
+    main_count: int
+    any_count: int
+
+
+@dataclass(frozen=True, slots=True)
 class DashboardSummary:
     trend_count: int
     family_count: int
@@ -65,10 +83,19 @@ def fold(text: str) -> str:
     return "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
 
 
+def _has_product_type(trend: TrendRecord, product_type: str) -> bool:
+    """Type principal ou secondaire, comme le filtre `category` de Data/IA."""
+    return trend.main_product_type == product_type or any(
+        share.id == product_type for share in trend.product_types
+    )
+
+
 def _matches(trend: TrendRecord, query: TrendQuery) -> bool:
     if query.family and trend.family != query.family:
         return False
     if query.status and trend.status != query.status:
+        return False
+    if query.product_type and not _has_product_type(trend, query.product_type):
         return False
     needle = fold(query.search or "")
     return not needle or needle in fold(trend.name) or needle in fold(trend.id)
@@ -85,6 +112,8 @@ def _sort_value(trend: TrendRecord, field: str) -> float | str | None:
         return fold(trend.name)
     if field == "score":
         return trend.score
+    if field in ANALYSIS_SORT_FIELDS:
+        return getattr(trend.analysis, field) if trend.analysis else None
     return trend.indicators.get(field)
 
 
@@ -126,6 +155,23 @@ def family_stats(trends: Iterable[TrendRecord]) -> list[FamilyStat]:
     ]
 
 
+def product_type_stats(trends: Iterable[TrendRecord]) -> list[ProductTypeStat]:
+    """Types de produits présents, les plus fréquents d'abord ; vide en repli CSV."""
+    labels: dict[str, str] = {}
+    present: Counter[str] = Counter()
+    main: Counter[str | None] = Counter()
+    for trend in trends:
+        main[trend.main_product_type] += 1
+        for share in trend.product_types:
+            labels.setdefault(share.id, share.label)
+            present[share.id] += 1
+    stats = [
+        ProductTypeStat(type_id, label, main[type_id], present[type_id])
+        for type_id, label in labels.items()
+    ]
+    return sorted(stats, key=lambda stat: (-stat.any_count, stat.label))
+
+
 def _total(trends: list[TrendRecord], key: str) -> float:
     return sum(t.indicators.get(key) or 0.0 for t in trends)
 
@@ -164,6 +210,10 @@ class TrendService:
     async def families(self) -> Sourced[list[FamilyStat]]:
         result = await self._source.list_trends()
         return Sourced(family_stats(result.value), result.status)
+
+    async def product_types(self) -> Sourced[list[ProductTypeStat]]:
+        result = await self._source.list_trends()
+        return Sourced(product_type_stats(result.value), result.status)
 
     async def summary(self) -> Sourced[DashboardSummary]:
         result = await self._source.list_trends()

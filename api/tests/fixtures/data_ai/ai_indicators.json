@@ -1,0 +1,57 @@
+[
+  {
+    "trend_id": "curry",
+    "aroma_name": "Curry",
+    "trend_status": "exploding",
+    "trend_status_reason": "hausse soudaine : le pic récent atteint 3.8 fois la moyenne",
+    "growth_rate": 27.0,
+    "buzz_score": 92,
+    "trend_score": 99,
+    "perennity_score_v2": 13,
+    "confidence_level": "high"
+  },
+  {
+    "trend_id": "acai",
+    "aroma_name": "Açaï",
+    "trend_status": "stable",
+    "trend_status_reason": "recherches stables sur les 3 derniers mois",
+    "growth_rate": -7.9,
+    "buzz_score": 33,
+    "trend_score": 72,
+    "perennity_score_v2": null,
+    "confidence_level": "medium"
+  },
+  {
+    "trend_id": "apricot",
+    "aroma_name": "Abricot",
+    "trend_status": "declining",
+    "trend_status_reason": "recherches en baisse sur les 3 derniers mois",
+    "growth_rate": -23.4,
+    "buzz_score": 40,
+    "trend_score": 26,
+    "perennity_score_v2": null,
+    "confidence_level": "high"
+  },
+  {
+    "trend_id": "bergamot",
+    "aroma_name": "Bergamote",
+    "trend_status": "insufficient_data",
+    "trend_status_reason": "volume de recherche trop faible pour conclure",
+    "growth_rate": null,
+    "buzz_score": 17,
+    "trend_score": null,
+    "perennity_score_v2": null,
+    "confidence_level": "low"
+  },
+  {
+    "trend_id": "chili",
+    "aroma_name": "Piment",
+    "trend_status": "seasonal",
+    "trend_status_reason": "hausse récente, mais au même niveau que l'an dernier à la même période",
+    "growth_rate": 21.9,
+    "buzz_score": 92,
+    "trend_score": 69,
+    "perennity_score_v2": null,
+    "confidence_level": "high"
+  }
+]

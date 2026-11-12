@@ -1,5 +1,5 @@
-// Données des rubriques : catalogue, teintes et noms des quatre variantes.
-import type { Category } from '../../types';
+// Données des rubriques : catalogue et teintes. Le nom imprimé vient de l'arôme.
+import type { Category, ShelfFlavor } from '../../types';
 
 const CATALOG = [
   {
@@ -126,58 +126,6 @@ const VARIANTS: Record<CategoryId, readonly number[]> = {
   nutrition: [0x1d3557, 0xe63946, 0x457b9d, 0xf1faee],
 };
 
-const NAMES: Record<CategoryId, readonly string[]> = {
-  'desserts-lactes': [
-    'Yaourt vanille',
-    'Crème caramel',
-    'Yaourt fraise',
-    'Crème chocolat',
-  ],
-  'produits-laitiers': [
-    'Lait entier',
-    'Crème fraîche',
-    'Beurre doux',
-    'Fromage blanc',
-  ],
-  boissons: ['Soda cola', 'Eau gazeuse', 'Jus orange', 'Thé pêche'],
-  glaces: ['Glace vanille', 'Glace menthe', 'Glace citron', 'Glace cassis'],
-  confiseries: [
-    'Bonbon fraise',
-    'Bonbon citron',
-    'Réglisse douce',
-    'Dragée amande',
-  ],
-  chocolats: [
-    'Chocolat noir',
-    'Chocolat lait',
-    'Chocolat noisette',
-    'Chocolat blanc',
-  ],
-  biscuits: [
-    'Sablé nature',
-    'Cookie pépites',
-    'Biscuit chocolat',
-    'Gaufre vanille',
-  ],
-  viennoiseries: [
-    'Croissant beurre',
-    'Pain chocolat',
-    'Chausson pomme',
-    'Brioche sucrée',
-  ],
-  cereales: [
-    'Flocons avoine',
-    'Muesli fruits',
-    'Céréales miel',
-    'Pétales chocolat',
-  ],
-  snacks: ['Chips nature', 'Chips paprika', 'Chips barbecue', 'Tuiles fromage'],
-  sauces: ['Sauce bbq', 'Sauce tomate', 'Ketchup nature', 'Sauce mayo'],
-  plats: ['Poulet rôti', 'Lasagnes bœuf', 'Riz cantonais', 'Gratin légumes'],
-  vegetal: ['Steak végétal', 'Tofu nature', 'Galette légumes', 'Lait avoine'],
-  nutrition: ['Whey vanille', 'Barre cacao', 'Shaker fraise', 'Boisson cacao'],
-};
-
 /** Une variante de produit : clé de cache, teinte et nom imprimé. */
 export interface ProductVariant {
   key: string;
@@ -197,14 +145,19 @@ export function categoryIdOf(category: Category): CategoryId {
   throw new Error(`Rubrique inconnue : ${category.id}`);
 }
 
-/** Variante n° `variant` de la rubrique, les teintes tournant en boucle. */
-export function variantOf(id: CategoryId, variant: number): ProductVariant {
+/** Variante n° `variant` : teinte de la rubrique, nom de l'arôme. */
+export function variantOf(
+  id: CategoryId,
+  variant: number,
+  flavor: ShelfFlavor,
+): ProductVariant {
   const colors = VARIANTS[id];
   const index = variant % colors.length;
   const color = colors[index];
-  const name = NAMES[id][index];
-  if (color === undefined || name === undefined) {
-    throw new Error(`Variante absente : ${id}:${index}`);
-  }
-  return { key: `${id}:${index}`, color, name };
+  if (color === undefined) throw new Error(`Variante absente : ${id}:${index}`);
+  return {
+    key: `${id}:${flavor.id}:${index}`,
+    color,
+    name: flavor.name,
+  };
 }

@@ -94,13 +94,30 @@ export function createAim(
   return { target, surfacePoint };
 }
 
-/** Rubrique portée par l'objet ou l'un de ses parents. */
-export function categoryOf(object: THREE.Object3D | null): Category | null {
+function carried<T>(
+  object: THREE.Object3D | null,
+  read: (data: THREE.Object3D['userData']) => T | null,
+): T | null {
   for (let node = object; node; node = node.parent) {
-    const category = node.userData.category as Category | undefined;
-    if (category) return category;
+    const value = read(node.userData);
+    if (value !== null) return value;
   }
   return null;
+}
+
+/** Rubrique portée par l'objet ou l'un de ses parents. */
+export function categoryOf(object: THREE.Object3D | null): Category | null {
+  return carried(object, (data) => {
+    const category = data.category as Category | undefined;
+    return category ?? null;
+  });
+}
+
+/** Arôme porté par le produit visé, ou null. */
+export function trendIdOf(object: THREE.Object3D | null): string | null {
+  return carried(object, (data) =>
+    typeof data.trendId === 'string' ? data.trendId : null,
+  );
 }
 
 /** Vrai si quelque chose est visé à portée de scan. */
@@ -108,7 +125,11 @@ export function inRange(hit: AimHit | null): hit is AimHit {
   return hit !== null && hit.distance <= SCAN_RANGE;
 }
 
-/** Vrai si le coup touche un produit (avec rubrique) à portée de scan. */
+/** Vrai si le coup touche un produit lié à un arôme, à portée de scan. */
 export function scannable(hit: AimHit | null): boolean {
-  return inRange(hit) && categoryOf(hit.object) !== null;
+  return (
+    inRange(hit) &&
+    categoryOf(hit.object) !== null &&
+    trendIdOf(hit.object) !== null
+  );
 }

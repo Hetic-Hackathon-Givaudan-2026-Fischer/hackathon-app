@@ -5,6 +5,7 @@ import {
   PAGE_SIZE_MAX,
   type DataIssueCreate,
   type ShowroomLinkCreate,
+  type SimulationCreate,
   type TrendListQuery,
   type TrendListRead,
 } from './types';
@@ -19,6 +20,9 @@ export const fetchSummary = (signal: Signal) =>
 
 export const fetchFamilies = (signal: Signal) =>
   unwrap(api.GET('/api/v1/families', { signal }));
+
+export const fetchProductTypes = (signal: Signal) =>
+  unwrap(api.GET('/api/v1/product-types', { signal }));
 
 export const fetchTrends = (query: TrendListQuery, signal: Signal) =>
   unwrap(api.GET('/api/v1/trends', { params: { query }, signal }));
@@ -44,6 +48,10 @@ export const fetchTrendReport = (trendId: string, signal: Signal) =>
 
 export const reportIssue = (body: DataIssueCreate) =>
   unwrap(api.POST('/api/v1/report/issues', { body }));
+
+/** Modèle V2 de Data/IA : 503 en repli CSV (aucun modèle). */
+export const simulate = (body: SimulationCreate) =>
+  unwrap(api.POST('/api/v1/simulate', { body }));
 
 /** Tous les arômes, page après page (102 arômes pour 100 par page au plus). */
 export async function fetchAllTrends(signal: Signal): Promise<TrendListRead> {

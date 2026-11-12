@@ -46,7 +46,7 @@ def _decode(response: httpx.Response) -> Any:
 
 
 class DataAiHttp:
-    """GET JSON sur l'API Data/IA. Toute panne devient DataSourceUnavailableError.
+    """GET / POST JSON vers l'API Data/IA ; toute panne : DataSourceUnavailableError.
 
     Les messages d'erreur ne contiennent jamais la clé d'API (elle n'est que
     dans les en-têtes, que l'on ne journalise pas).
@@ -69,17 +69,24 @@ class DataAiHttp:
         not_found: str | None = None,
     ) -> Any:
         """`not_found` : message du 404 attendu ; sinon un 404 déclenche le repli."""
-        response = await self._send(path, params, time_limit or self.timeout)
+        time_limit = time_limit or self.timeout
+        response = await self._send("GET", path, time_limit, params=params)
         _check_status(response, not_found)
         return _decode(response)
 
+    async def post_json(self, path: str, body: dict[str, Any]) -> Any:
+        """Calcul sans état chez Data/IA : rien n'y est enregistré."""
+        response = await self._send("POST", path, self.timeout, json=body)
+        _check_status(response, None)
+        return _decode(response)
+
     async def _send(
-        self, path: str, params: dict[str, str] | None, time_limit: float
+        self, method: str, path: str, time_limit: float, **options: Any
     ) -> httpx.Response:
         url = f"{self._base_url}{path}"
         try:
-            return await self._http.get(
-                url, params=params, headers=self._headers, timeout=time_limit
+            return await self._http.request(
+                method, url, headers=self._headers, timeout=time_limit, **options
             )
         except (httpx.HTTPError, httpx.InvalidURL) as exc:
             raise DataSourceUnavailableError(

@@ -1,13 +1,37 @@
 {
   "count": 5,
-  "generated_at": "2026-11-12T05:27:22.794157+00:00",
+  "generated_at": "2026-11-12T11:31:42.410437+00:00",
   "trends": [
     {
       "trend_id": "curry",
       "aroma_name": "Curry",
       "aroma_name_en": "Curry",
       "family": "epice",
-      "category_3d_aisle": "Épicerie salée & sauces",
+      "category_3d_aisle": "Plats préparés et produits traiteur",
+      "main_product_type": "plats",
+      "product_types": [
+        {
+          "id": "plats",
+          "label": "Plats préparés et produits traiteur",
+          "products": 79,
+          "share": 0.427,
+          "basis": "produits"
+        },
+        {
+          "id": "sauces",
+          "label": "Sauces et condiments",
+          "products": 68,
+          "share": 0.368,
+          "basis": "produits"
+        },
+        {
+          "id": "snacks",
+          "label": "Snacks et produits apéritifs",
+          "products": 20,
+          "share": 0.108,
+          "basis": "produits"
+        }
+      ],
       "status_label": "En hausse : probablement passager (buzz)",
       "scores": {
         "v1_rule_verdict": "buzz",
@@ -86,7 +110,31 @@
       "aroma_name": "Açaï",
       "aroma_name_en": "Açaí",
       "family": "fruits_exotiques",
-      "category_3d_aisle": "Boissons",
+      "category_3d_aisle": "Produits nutritionnels et sportifs",
+      "main_product_type": "nutrition",
+      "product_types": [
+        {
+          "id": "nutrition",
+          "label": "Produits nutritionnels et sportifs",
+          "products": 7,
+          "share": 0.333,
+          "basis": "produits"
+        },
+        {
+          "id": "boissons",
+          "label": "Boissons",
+          "products": 6,
+          "share": 0.286,
+          "basis": "produits"
+        },
+        {
+          "id": "produits-laitiers",
+          "label": "Produits laitiers",
+          "products": 4,
+          "share": 0.19,
+          "basis": "produits"
+        }
+      ],
       "status_label": "Stable",
       "scores": {
         "v1_rule_verdict": null,
@@ -158,6 +206,37 @@
       "aroma_name_en": "Apricot",
       "family": "fruits_noyau",
       "category_3d_aisle": "Boissons",
+      "main_product_type": "boissons",
+      "product_types": [
+        {
+          "id": "boissons",
+          "label": "Boissons",
+          "products": 49,
+          "share": 0.398,
+          "basis": "produits"
+        },
+        {
+          "id": "cereales",
+          "label": "Céréales et produits du petit-déjeuner",
+          "products": 23,
+          "share": 0.187,
+          "basis": "produits"
+        },
+        {
+          "id": "produits-laitiers",
+          "label": "Produits laitiers",
+          "products": 17,
+          "share": 0.138,
+          "basis": "produits"
+        },
+        {
+          "id": "biscuits",
+          "label": "Biscuits et pâtisseries",
+          "products": 17,
+          "share": 0.138,
+          "basis": "produits"
+        }
+      ],
       "status_label": "En baisse",
       "scores": {
         "v1_rule_verdict": null,
@@ -211,6 +290,16 @@
       "aroma_name_en": "Bergamot",
       "family": "agrumes",
       "category_3d_aisle": "Boissons",
+      "main_product_type": "boissons",
+      "product_types": [
+        {
+          "id": "boissons",
+          "label": "Boissons",
+          "products": 8,
+          "share": 0.667,
+          "basis": "produits"
+        }
+      ],
       "status_label": "Volume de recherche trop faible pour conclure",
       "scores": {
         "v1_rule_verdict": null,
@@ -252,7 +341,31 @@
       "aroma_name": "Piment",
       "aroma_name_en": "Chili pepper",
       "family": "epice",
-      "category_3d_aisle": "Épicerie salée & sauces",
+      "category_3d_aisle": "Plats préparés et produits traiteur",
+      "main_product_type": "plats",
+      "product_types": [
+        {
+          "id": "plats",
+          "label": "Plats préparés et produits traiteur",
+          "products": 344,
+          "share": 0.417,
+          "basis": "produits"
+        },
+        {
+          "id": "sauces",
+          "label": "Sauces et condiments",
+          "products": 255,
+          "share": 0.309,
+          "basis": "produits"
+        },
+        {
+          "id": "snacks",
+          "label": "Snacks et produits apéritifs",
+          "products": 125,
+          "share": 0.152,
+          "basis": "produits"
+        }
+      ],
       "status_label": "En hausse saisonnière (niveau proche de l'an dernier)",
       "scores": {
         "v1_rule_verdict": null,

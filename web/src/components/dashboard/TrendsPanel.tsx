@@ -1,4 +1,8 @@
-import type { DashboardSummaryRead, FamilyRead } from '../../api/types';
+import type {
+  DashboardSummaryRead,
+  FamilyRead,
+  ProductTypeRead,
+} from '../../api/types';
 import type { TrendFiltersState } from '../../hooks/useTrendFilters';
 import { useDatasetReport, useTrendList } from '../../hooks/useTrendsApi';
 import { indicatorColumns } from './columns';
@@ -11,13 +15,14 @@ import { BUTTON_SECONDARY, CARD } from './ui';
 interface TrendsPanelProps {
   filters: TrendFiltersState;
   families: FamilyRead[];
+  productTypes: ProductTypeRead[];
   summary: DashboardSummaryRead | undefined;
   onSelect: (trendId: string) => void;
 }
 
 /** Liste filtrable, triable et paginée côté API (GET /trends). */
 export function TrendsPanel(props: TrendsPanelProps) {
-  const { filters, families, summary, onSelect } = props;
+  const { filters, families, productTypes, summary, onSelect } = props;
   const { filters: state, query, update, toggleSort, setPage } = filters;
   const catalog = useDatasetReport();
   const list = useTrendList(query);
@@ -33,7 +38,9 @@ export function TrendsPanel(props: TrendsPanelProps) {
         <TrendFilters
           family={state.family}
           status={state.status}
+          productType={state.productType}
           families={families}
+          productTypes={productTypes}
           summary={summary}
           onChange={update}
         />

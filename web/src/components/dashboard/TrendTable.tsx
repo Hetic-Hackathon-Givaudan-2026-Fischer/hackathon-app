@@ -1,6 +1,11 @@
-import type { SortOrder, TrendRead, TrendSortField } from '../../api/types';
+import type {
+  SortOrder,
+  TrendAnalysisRead,
+  TrendRead,
+  TrendSortField,
+} from '../../api/types';
 import type { IndicatorColumn } from './columns';
-import { familyLabel, formatIndicator } from '../../lib/format';
+import { MISSING, familyLabel, formatIndicator } from '../../lib/format';
 import { ScoreGauge } from './ScoreGauge';
 import { StatusBadge } from './StatusBadge';
 
@@ -13,19 +18,47 @@ interface TrendTableProps {
   onSelect: (trendId: string) => void;
 }
 
+type AnalysisScore = Extract<TrendSortField, keyof TrendAnalysisRead>;
+
+interface AnalysisColumn {
+  key: AnalysisScore;
+  label: string;
+  hint: string;
+}
+
+// Indicateurs métier Data/IA : montrés seulement si la page en contient
+const ANALYSIS_COLUMNS: readonly AnalysisColumn[] = [
+  {
+    key: 'buzz_score',
+    label: 'Buzz',
+    hint: 'Bêta : attention médiatique, rang relatif de 0 à 100',
+  },
+  {
+    key: 'trend_score',
+    label: 'Dynamique',
+    hint: 'Bêta : dynamique de recherche, rang relatif de 0 à 100',
+  },
+];
+
+function analysisColumns(items: TrendRead[]): readonly AnalysisColumn[] {
+  return items.some((trend) => trend.analysis) ? ANALYSIS_COLUMNS : [];
+}
+
 /** Tableau sur desktop, cartes empilées sur mobile. */
 export function TrendTable(props: TrendTableProps) {
+  const scores = analysisColumns(props.items);
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
         <table className="w-full border-collapse text-left">
-          <TableHead {...props} />
+          <TableHead {...props} scores={scores} />
           <tbody className="divide-y divide-[#E5E7EB] text-[14px]">
             {props.items.map((trend) => (
               <TrendRow
                 key={trend.id}
                 trend={trend}
                 columns={props.columns}
+                scores={scores}
                 onSelect={props.onSelect}
               />
             ))}
@@ -46,7 +79,11 @@ export function TrendTable(props: TrendTableProps) {
   );
 }
 
-function TableHead({ columns, sort, order, onSort }: TrendTableProps) {
+interface TableHeadProps extends TrendTableProps {
+  scores: readonly AnalysisColumn[];
+}
+
+function TableHead({ columns, scores, sort, order, onSort }: TableHeadProps) {
   const headers: Array<{
     key: TrendSortField | null;
     label: string;
@@ -59,6 +96,7 @@ function TableHead({ columns, sort, order, onSort }: TrendTableProps) {
       label: 'Score V2',
       hint: 'Pérennité selon le modèle V2, de 0 à 100',
     },
+    ...scores,
     ...columns,
   ];
   return (
@@ -107,7 +145,11 @@ interface TrendItemProps {
   onSelect: (trendId: string) => void;
 }
 
-function TrendRow({ trend, columns, onSelect }: TrendItemProps) {
+interface TrendRowProps extends TrendItemProps {
+  scores: readonly AnalysisColumn[];
+}
+
+function TrendRow({ trend, columns, scores, onSelect }: TrendRowProps) {
   return (
     <tr
       onClick={() => onSelect(trend.id)}
@@ -131,6 +173,14 @@ function TrendRow({ trend, columns, onSelect }: TrendItemProps) {
       <td className="px-4 py-3">
         <ScoreGauge score={trend.score} />
       </td>
+      {scores.map(({ key }) => (
+        <td
+          key={key}
+          className="px-4 py-3 whitespace-nowrap text-[#3F3F46] tabular-nums"
+        >
+          {trend.analysis?.[key] ?? MISSING}
+        </td>
+      ))}
       {columns.map((column) => (
         <td
           key={column.key}

@@ -5,7 +5,7 @@ import type { Market } from '../../types';
 import type { BuildContext } from './context';
 import { addCeiling } from './ceiling';
 import { slideDoors } from './doors';
-import { addAisles, addColdWall } from './fixtures';
+import { addAisles, addColdWall, refillShelves } from './fixtures';
 import { createMaterials } from './materials';
 import { layoutPlan } from './plan';
 import { addMural } from './posters';
@@ -22,6 +22,9 @@ function createContext(): BuildContext {
     materials: createMaterials(),
     doors: [],
     spotlights: [],
+    bays: [],
+    flavorOffsets: new Map(),
+    stockSignature: null,
   };
 }
 
@@ -41,6 +44,7 @@ export function createMarket(scene: THREE.Scene): Market {
     group: ctx.group,
     productMeshes: ctx.productMeshes,
     colliders: ctx.colliders,
+    stock: (flavors) => refillShelves(ctx, flavors),
     updateDoors: (position, dt) => slideDoors(ctx.doors, position, dt),
     updateSpotlights: (time) => pulseSpotlights(ctx.spotlights, time),
   };

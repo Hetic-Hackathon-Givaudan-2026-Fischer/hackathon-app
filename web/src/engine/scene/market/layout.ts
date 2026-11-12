@@ -49,7 +49,7 @@ export const OPENINGS: readonly Opening[] = [
 ];
 
 /** Pupitre d'accueil, tourné vers l'entrée. */
-export const WELCOME_BOARD = { x: -4.96, z: 8.15, yaw: Math.PI / 4 } as const;
+export const WELCOME_BOARD = { x: -3.5, z: 8.15, yaw: Math.PI / 4 } as const;
 
 /** Élément d'une table constante ; une erreur signale un index hors bornes. */
 export function at<T>(items: readonly T[], index: number): T {
