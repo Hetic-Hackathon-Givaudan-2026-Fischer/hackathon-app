@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write . '!db/data'",
     "format:check": "prettier --check . '!db/data'",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "gen:api": "openapi-typescript openapi.yaml -o web/src/api/schema.d.ts && prettier --write web/src/api/schema.d.ts"
   },
   "lint-staged": {
