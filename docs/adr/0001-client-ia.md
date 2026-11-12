@@ -1,6 +1,6 @@
 # 0001. Appeler l'IA par le contrat compatible OpenAI
 
-- Statut : acceptée
+- Statut : remplacée par [0011](0011-retrait-questions-ia.md)
 - Date : 2026-11-08 (mise à jour le 2026-11-10 : API en Python, voir [0004](0004-backend-fastapi.md))
 - Décideurs : Arnaud Fischer
 

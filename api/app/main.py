@@ -5,26 +5,37 @@ import httpx
 from fastapi import FastAPI
 
 from app.api.errors import register_exception_handlers
+from app.api.middleware import RequestContextMiddleware
 from app.api.v1.router import API_V1_PREFIX, api_router
 from app.core.config import get_settings
+from app.core.logging import configure_logging
 from app.db.session import create_engine, create_session_factory
 
 DESCRIPTION = """
-Questions posées à l'IA et réponses enregistrées dans PostgreSQL.
+Interface interne Givaudan : tendances d'arômes, rapport d'analyse, showroom.
 
-L'IA est choisie dans `api/.env` : un fournisseur compatible OpenAI (mode 1),
-ou l'API de l'équipe Data/IA dès que `DATA_AI_URL` est renseignée (mode 2).
+- **Tendances** : lues dans l'API Data/IA (`DATA_AI_URL`), ou dans le CSV de
+  repli quand elle est vide ou injoignable. Chaque réponse porte `origin`
+  (`data_ai` | `csv_fallback`) et `data_date`.
+- **Rapport** : provenance, traitements et qualité des données ; signalements.
+- **Showroom** : liens temporaires, sans compte, en lecture seule.
+
+Chaque réponse porte un en-tête `X-Request-ID`, à communiquer au support.
 """
 
 TAGS = [
-    {"name": "santé", "description": "Healthcheck de l'API et de la base."},
-    {"name": "questions", "description": "Poser une question, relire l'historique."},
+    {"name": "santé", "description": "Healthcheck de l'API, de la base et de Data/IA."},
+    {"name": "dashboard", "description": "KPI et familles d'arômes."},
+    {"name": "tendances", "description": "Arômes : liste filtrable, fiche détaillée."},
+    {"name": "rapport", "description": "Provenance, qualité, modèle ; signalements."},
+    {"name": "showroom", "description": "Liens showroom temporaires (ADR 0010)."},
 ]
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Pool PostgreSQL et client HTTP : créés une fois, partagés, fermés à l'arrêt."""
+    """Logs JSON ; pool PostgreSQL et client HTTP créés une fois, fermés à l'arrêt."""
+    configure_logging()
     engine = create_engine(get_settings().database_url)
     app.state.session_factory = create_session_factory(engine)
     try:
@@ -49,6 +60,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(api_router, prefix=API_V1_PREFIX)
     register_exception_handlers(app)
+    app.add_middleware(RequestContextMiddleware)
     return app
 
 

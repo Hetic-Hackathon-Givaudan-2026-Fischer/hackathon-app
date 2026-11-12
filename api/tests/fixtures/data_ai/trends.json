@@ -1,0 +1,328 @@
+{
+  "count": 5,
+  "generated_at": "2026-11-12T05:27:22.794157+00:00",
+  "trends": [
+    {
+      "trend_id": "curry",
+      "aroma_name": "Curry",
+      "aroma_name_en": "Curry",
+      "family": "epice",
+      "category_3d_aisle": "Épicerie salée & sauces",
+      "status_label": "En hausse : probablement passager (buzz)",
+      "scores": {
+        "v1_rule_verdict": "buzz",
+        "v2_perennity_score": 13,
+        "mirofish_simulation_score": null,
+        "confidence_level": "haute"
+      },
+      "metrics": {
+        "search_growth_13w_pct": 27.0,
+        "search_growth_52w_pct": 55.5,
+        "search_volatility_26w": 0.594,
+        "search_spike_ratio": 3.82,
+        "popularity_vs_vanilla": null,
+        "wikipedia_growth_12m_relative_pts": 3.4,
+        "openfoodfacts_products_count": 361,
+        "openfoodfacts_brands": 226,
+        "openfoodfacts_countries": 42,
+        "press_mentions_30d": 22,
+        "social_mentions_30d": 195,
+        "youtube_views_30d": 50327,
+        "sponsored_share_30d": 0.014,
+        "efsa_regulatory_status": "non_verifie"
+      },
+      "evidence": [
+        {
+          "source": "google_news",
+          "date": "2026-11-12",
+          "title": "Weston-super-Mare curry house owner recognised for tackling major issue",
+          "url": "https://news.google.com/rss/articles/CBMipgFBVV95cUxNeWtCLXl3cDByWDVEN2NjT1dJOE1XVTNaNUhFM0ppTi0tbUpTUVdlYUd3TE9laXNSZVhFSlVfaDQtWkJ1X0YydUtyVEhqSUVocllVSk5zNy0tUTB4THlQOWxGRG84SHp0UFpkOHhXcV9Ia2piLThVbHNqTEs3M0VBXzFxSTlCZ3ZOem9aV285emlFenlYVHVTbHA2Uy1kSFhIcEM1a09R?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-12",
+          "title": "Warriors’ Stephen Curry exits early with abdominal soreness, ruled out vs Rockets",
+          "url": "https://news.google.com/rss/articles/CBMijwJBVV95cUxNZlNGSzZIam5LdEJZR3hRekNWY0VRWHJRUHlfM2l4Si1nd002Z09Pc1BHYUhPZ19kZUhnQzJEMlM4VldCMkJiT25lYVJWZUtIZ2xRWUViOUcxV2I4TVk4RkY5WmFvY2ZTaDJibjBIVy1uS3VvTmxTRmN5ZDFzb0pFQ0ozakxEdUJEN3dacE15MzZqaGlsdXZqWG1IQkVXYTJVTFkyVUJ4T25XejZjVlBWN1ItbTUwaFQ2Q1pNYkFmblphYVJEVjNqRGlsN05lVGx4T1dVekt2WjQ3WGVPRDQwZi1yQnZsSzBZWlpPaWFzaDNOTk9WcHUtcUtqSlF2WXBLVkRicTRlWjVnUlE0S0hJ?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "Glasgow restaurant creates 'curry in a pie' for Aldi stores across Scotland",
+          "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxQWnluZVJ1eENwNHQ0NWt6azZTOC1yQWpVOVV5dlBqUTFHeUpLaC02Y3QzWmlXRVhWRTFKWVBCZmZINGkxNGI1RmRsaDlxbUFTVFNTSW5kQ1RhZXMzOVJjTUt6LTl2Y0twWVU3TWswU2FXNy1hdWhLYVJySFBJb1hLRjFsVVRGdDRJd0lKMi1OMWpwMWV2bHlhaTV3SGFLN1XSAaQBQVVfeXFMT1pqTThUTW1heVBmTlZJYzZaNmFLT3p6Zk9LY01JNE1waHh2akR3VVJnZUxzRGlQTVFBSlh0bXNrVnVVRy05b2JXQ1E1eGMxbkw1SE5YRmI3VmpLdG8waC1qWmswSV9hcWRQYnduSmtnNjZJZmhWYUgzMXVsSjNNLW1hQm15cFJGRXBpUFFRYzVxVjJjRU43Z3ZZVW1sdnFDQWpDNUY?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "LEON UNVEILS CHRISTMAS 2026 MENU WITH FESTIVE WRAP, SANDO CLAUS AND RETURNING CHRISTMAS PARTY CURRY!",
+          "url": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNMVU4dFY2WHc5QUZ6TUhrdmdWeGVYc2k3MFJfUURMWGlNTkxkQV9VWGtmRUNoTDJNTFJkRTBQUURhMy1CUW93Rkp5XzM1eGI0SkF3S3dmWll4ZHJkekpZS3ZhV3JpT3dkVklrN1hnc3hYRV94dFpYNGhYdVdsUGJUY0E5LTVzRVgwdlI1UmFMaGdQT0xsNjFPQ3dvdVpCUHVBV0JJRmotSXJhZFdMU0xSSF9IRkhFM2tsbGo1QXc0UVFIUDFfcVE?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "Glasgow Indian restaurant teams up with popular bakery to launch new curry pies",
+          "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxQZDZtcTRHdW1jQzZNQlV4blRnQ3ZadXhWUzFzVkxsU1Rub3pxM0gyMUVLajFGNHlYQUJJX3RpbkFjQ2ZNVEpmaFI0RkVLczI3UnEtRndwcVp5dXNhR2dqQkJ2WERNVUVGUW5YX2EwbFlKOW1ZTW9rb3V1c3hTb1owai1JVkNTaXlIRURfdFRuOVlGYmlCaDlReQ?oc=5"
+        },
+        {
+          "source": "youtube",
+          "date": "2026-11-10",
+          "title": "Singapore Noodles The Takeaway Classic",
+          "url": null
+        }
+      ],
+      "watch_points": [
+        "Courbe de recherche irrégulière (volatilité 0.59) : risque d'effet de mode.",
+        "Pic récent marqué (pic = 3.8 × la moyenne) : forme typique d'un buzz.",
+        "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+      ],
+      "mirofish": {
+        "status": "fiche_prete",
+        "packet": "data/sample/mirofish_packets/curry.md",
+        "simulation": null
+      },
+      "data_origin": "reel"
+    },
+    {
+      "trend_id": "acai",
+      "aroma_name": "Açaï",
+      "aroma_name_en": "Açaí",
+      "family": "fruits_exotiques",
+      "category_3d_aisle": "Boissons",
+      "status_label": "Stable",
+      "scores": {
+        "v1_rule_verdict": null,
+        "v2_perennity_score": null,
+        "mirofish_simulation_score": null,
+        "confidence_level": "moyenne"
+      },
+      "metrics": {
+        "search_growth_13w_pct": -7.9,
+        "search_growth_52w_pct": 11.4,
+        "search_volatility_26w": 0.076,
+        "search_spike_ratio": 1.03,
+        "popularity_vs_vanilla": null,
+        "wikipedia_growth_12m_relative_pts": 14.7,
+        "openfoodfacts_products_count": 32,
+        "openfoodfacts_brands": 26,
+        "openfoodfacts_countries": 14,
+        "press_mentions_30d": 4,
+        "social_mentions_30d": 14,
+        "youtube_views_30d": 60,
+        "sponsored_share_30d": 0.0,
+        "efsa_regulatory_status": "non_verifie"
+      },
+      "evidence": [
+        {
+          "source": "google_news",
+          "date": "2026-11-10",
+          "title": "West Michigan-born ‘health hub’ with acai, kombucha adding Ford Airport location",
+          "url": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPTTdMeUlNejB5dk4wQjg4TWFoaTIxNWNmOW1WUnhtZkdySWNZcF9pUnFPRGNHdEI4RTQzUjEtNzczRU5TU3l3VzdYRVFYRUpkSzhGSFdlZ2lIRE96LWNqcjJmbldvZ3JUYlo4NndXQWplWllKTmNmVE4wTVUtQXE4bldyb0phczQ0Zi1VdHQ3SUx3R0R0bEhpVWRVbWZIU3VGRExEbVd1MW5fOWJaLWRnM0gwZjAxX0o4Q0HSAb8BQVVfeXFMUHRMTEtzTVBDUTc1dzdZV1RfVGpvOHR0eWVDVDVCV3oyVG1WbGt5NXhBQmNjc1NPd0UydHhub285YlZ4RllVVFVtbEV2QU45YkI1LUk0NDQ4Y01OU3pVSHNLZlJiLUVLNWRUZFUzdUQ2bXhIcUktWFFYelAyZzJjVkhndnJpc1N1Q0p0aXV6OXNXemxsYm1XcUlySEd2eTM5WG01d01hbFZfR043TmJLdS1IdExsTjU5eDJGY21MZHc?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-10",
+          "title": "Acai Berry Market Outlook Signals Expansion To $3.32 Billion Through 2030",
+          "url": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPbEgxN2VtNXRlTUFkcEZoYkJYWGZ5T3M0RUtTLXFWUW0wUkNXUjhob1dOVk10SXh0Y0IzaXg1WlRwYnNKXzBEUkJxWi1KSjlqQlpFU1RaSFVYSUVWb09zV1NyV2tPRmRsQWhGV25UdTBKMzd3SHFuU01NXzFZZmljWS1kTnRvTzM0TmdCcmgyU0xick53VjY1RDM3UQ?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-08",
+          "title": "Review: OCA, acai bowls in Stockbridge",
+          "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTE5xekVobmxSQkN4a0FaLU1ZVHJvSGJSVTcyZUs1ZlpZVlBvZkNKdjczckV5NDg5V0REeXhQZ0pBN2RDblFPRVk2M0U3RV9lUHRHY2dZSk83MzExVmZCWGEyZ1NYMF9aNElMMXNxWERwQUVYcUhwbzh4LQ?oc=5"
+        },
+        {
+          "source": "youtube",
+          "date": "2026-11-06",
+          "title": "AQUARIUS EXTRA Grenade & Açaï : vraiment EXTRA ? 😳🥤 #tasdejabucatoi #drink #boisson",
+          "url": null
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-06",
+          "title": "New Acai Bowl Shop Opened in Wimbledon Quarter",
+          "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5oWFdHbXNXWmZZajFsOW1LLU9fMXpCNUN3ZElvMjRKOXdBYmZBQ180Ujh2ZVIwT1NmTHVWS2RYVXhzUWdJb1I5M1BTZlNyUkU1MXFXQ2w3NFhmWjdyb09Z?oc=5"
+        }
+      ],
+      "watch_points": [
+        "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+      ],
+      "mirofish": {
+        "status": "fiche_prete",
+        "packet": "data/sample/mirofish_packets/acai.md",
+        "simulation": null
+      },
+      "data_origin": "reel"
+    },
+    {
+      "trend_id": "apricot",
+      "aroma_name": "Abricot",
+      "aroma_name_en": "Apricot",
+      "family": "fruits_noyau",
+      "category_3d_aisle": "Boissons",
+      "status_label": "En baisse",
+      "scores": {
+        "v1_rule_verdict": null,
+        "v2_perennity_score": null,
+        "mirofish_simulation_score": null,
+        "confidence_level": "haute"
+      },
+      "metrics": {
+        "search_growth_13w_pct": -23.4,
+        "search_growth_52w_pct": -2.6,
+        "search_volatility_26w": 0.184,
+        "search_spike_ratio": 1.12,
+        "popularity_vs_vanilla": null,
+        "wikipedia_growth_12m_relative_pts": 6.2,
+        "openfoodfacts_products_count": 181,
+        "openfoodfacts_brands": 99,
+        "openfoodfacts_countries": 27,
+        "press_mentions_30d": 1,
+        "social_mentions_30d": 61,
+        "youtube_views_30d": 3145,
+        "sponsored_share_30d": 0.0,
+        "efsa_regulatory_status": "non_verifie"
+      },
+      "evidence": [
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "In Almora, a homestay amid apricot and peach trees",
+          "url": "https://news.google.com/rss/articles/CBMigwFBVV95cUxQS3kxWUtvdGdIbEVjUy1xT2ZOa0tzZTZYc1RiYTgwNXU3T0xYblI4dXRDOHNqWlJ4VHFzWnk3UkJwcGw3dm1PNWw1SEZwUHNYeFhtTWZ5aXZDN2ZpLTZZSEtabG1MaDBaV0RhVXgyMWRGVDBodHh3RjhvVjFYMnpsS2M1aw?oc=5"
+        },
+        {
+          "source": "youtube",
+          "date": "2026-11-06",
+          "title": "ABC Fruits Name from A to Z | Learn Fruits Name for Kids & Toddlers",
+          "url": null
+        }
+      ],
+      "watch_points": [
+        "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+      ],
+      "mirofish": {
+        "status": "fiche_prete",
+        "packet": "data/sample/mirofish_packets/apricot.md",
+        "simulation": null
+      },
+      "data_origin": "reel"
+    },
+    {
+      "trend_id": "bergamot",
+      "aroma_name": "Bergamote",
+      "aroma_name_en": "Bergamot",
+      "family": "agrumes",
+      "category_3d_aisle": "Boissons",
+      "status_label": "Volume de recherche trop faible pour conclure",
+      "scores": {
+        "v1_rule_verdict": null,
+        "v2_perennity_score": null,
+        "mirofish_simulation_score": null,
+        "confidence_level": "basse"
+      },
+      "metrics": {
+        "search_growth_13w_pct": null,
+        "search_growth_52w_pct": null,
+        "search_volatility_26w": null,
+        "search_spike_ratio": null,
+        "popularity_vs_vanilla": null,
+        "wikipedia_growth_12m_relative_pts": -2.8,
+        "openfoodfacts_products_count": 13,
+        "openfoodfacts_brands": 9,
+        "openfoodfacts_countries": 4,
+        "press_mentions_30d": 0,
+        "social_mentions_30d": 36,
+        "youtube_views_30d": 0,
+        "sponsored_share_30d": 0.0,
+        "efsa_regulatory_status": "non_verifie"
+      },
+      "evidence": [],
+      "watch_points": [
+        "Volume de recherche Google Trends trop faible pour mesurer une tendance fiable.",
+        "Peu de produits en rayon dans notre échantillon Open Food Facts (13) : marché encore étroit (ou arôme de niche).",
+        "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+      ],
+      "mirofish": {
+        "status": "fiche_prete",
+        "packet": "data/sample/mirofish_packets/bergamot.md",
+        "simulation": null
+      },
+      "data_origin": "reel"
+    },
+    {
+      "trend_id": "chili",
+      "aroma_name": "Piment",
+      "aroma_name_en": "Chili pepper",
+      "family": "epice",
+      "category_3d_aisle": "Épicerie salée & sauces",
+      "status_label": "En hausse saisonnière (niveau proche de l'an dernier)",
+      "scores": {
+        "v1_rule_verdict": null,
+        "v2_perennity_score": null,
+        "mirofish_simulation_score": null,
+        "confidence_level": "haute"
+      },
+      "metrics": {
+        "search_growth_13w_pct": 21.9,
+        "search_growth_52w_pct": 0.1,
+        "search_volatility_26w": 0.154,
+        "search_spike_ratio": 1.27,
+        "popularity_vs_vanilla": null,
+        "wikipedia_growth_12m_relative_pts": 0.1,
+        "openfoodfacts_products_count": 1405,
+        "openfoodfacts_brands": 774,
+        "openfoodfacts_countries": 76,
+        "press_mentions_30d": 22,
+        "social_mentions_30d": 215,
+        "youtube_views_30d": 18240,
+        "sponsored_share_30d": 0.0,
+        "efsa_regulatory_status": "non_verifie"
+      },
+      "evidence": [
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "Tequesta Chili Cook-Off Brings the Heat",
+          "url": "https://news.google.com/rss/articles/CBMidkFVX3lxTFBka1hVZHdELXNoX213dnVGdzkzSWoyUThmMy01S2dUcUJNREtUdVhxWUozYjJwTHc5MzhXWE5mb1ltWTBDMDRXUXJaRG5NNEMwdS1ucV9vNFNrd3k4TjZfNEgySlZyR2xfMm5HcWs3Z25tNXZlQ1E?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "Veterans Day 2026 deals: Score free food from Olive Garden, Krispy Kreme, Chili’s, and more",
+          "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE44ZU5pM2xpa1laUEpCTTVSUVBrNmRiaUtaVmdZaS1YWHJleUNBYUJBM1BweXBuTEtHbnA2eG9VV1Iyd3RWTU1MajM1UTNPM1AtU2Vwamw0UXV0dmxnekJpY3RmdnZwd25KbnVR?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-11",
+          "title": "Kiwanis Chili Day Remembered as Annual Northeast Tradition",
+          "url": "https://news.google.com/rss/articles/CBMilgFBVV95cUxOTzQ3Y1BQcFRuSFRtNmtVOFpiNnZPZHpVMzlZMVU4enRCX1QySDFseTYwczZURWFRbTRhMGpnWHJiWkxDbTRuQk1PYWJ0ZHp2U2NrWUtsNVgza01HX3VqS2IzdzJXZzJrX3JsQ3RYSDQ5aHhKQkN1ZU5sNFI4TWZJMi1BWmFxazR0TnpJTGRtYklmcjl2Y1E?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-10",
+          "title": "Barney’s Beanery West Hollywood Celebrates Route 66 Centennial With $1 Chili Special",
+          "url": "https://news.google.com/rss/articles/CBMiqAFBVV95cUxPNHptNVoyc2pqWTJzSW1OdzNnYzNhNmJ0TVVkbGFDbmtJNjNPOGRPNWdsS3VZbzhtNFZJRDVCOU1yMm9udE9aWVVfZmpMX3p1OVM5R2ZoN3JvN2tPeWp6UXEzdUlzVE5veTlFcFEyMDYxZ3ZNWFctUXBrQndfSXMwekRqdWQxNUVYS2pXMFc4dWszNG1EWE1HbDR0cEVFWHlTcjl0aTk0aGg?oc=5"
+        },
+        {
+          "source": "google_news",
+          "date": "2026-11-10",
+          "title": "Spiced Soft Drinks: The Root Co. Adds Chipotle Heat to Chilli Ginger Beer",
+          "url": "https://news.google.com/rss/articles/CBMiY0FVX3lxTFBBWkpxVVB4MmFzSnNlMjRWQ1JGZVVGQ2V6YmRIbnJnVGpJbDdRWG8zSV82TFVULVFVSXptRmJ0NU1hS3RpLUVzekhyT0g1Y2xOSG9ibzNyYVNlSFduTHBsaUNEVQ?oc=5"
+        },
+        {
+          "source": "youtube",
+          "date": "2026-11-10",
+          "title": "Reviewing Eat Real Hummus Chips Zesty Lime Chilli And Sea Salt Flavour",
+          "url": null
+        }
+      ],
+      "watch_points": [
+        "Les vues Wikipédia baissent globalement (≈ -24 % en un an) : seule la croissance relative est interprétable."
+      ],
+      "mirofish": {
+        "status": "fiche_prete",
+        "packet": "data/sample/mirofish_packets/chili.md",
+        "simulation": null
+      },
+      "data_origin": "reel"
+    }
+  ]
+}

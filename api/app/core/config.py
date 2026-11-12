@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ASYNC_DRIVER = "postgresql+asyncpg://"
@@ -27,13 +27,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     database_url: str
-    # Mode 1 : n'importe quel fournisseur compatible OpenAI (Ollama, Mistral…)
-    ai_base_url: str = ""
-    ai_model: str = ""
-    ai_api_key: SecretStr = SecretStr("")
-    # Mode 2 : l'API de l'équipe Data/IA, prioritaire dès que l'URL est renseignée
+    # API Data/IA « FlavorTrends » (ADR 0008) ; vide : CSV de repli seul
     data_ai_url: str | None = None
     data_ai_key: SecretStr = SecretStr("")
+    # Au-delà, l'API Data/IA est jugée injoignable : le CSV prend le relais
+    data_ai_timeout_seconds: float = Field(default=5.0, gt=0)
+    # Liens showroom (ADR 0010) : URL du front et durée de vie par défaut
+    public_web_url: str = "http://localhost:5173"
+    showroom_link_ttl_hours: int = Field(default=72, ge=1, le=720)
 
     @field_validator("database_url")
     @classmethod
@@ -43,7 +44,7 @@ class Settings(BaseSettings):
     @field_validator("data_ai_url")
     @classmethod
     def _empty_means_unset(cls, url: str | None) -> str | None:
-        # `DATA_AI_URL=` vide dans .env : on reste en mode 1
+        # `DATA_AI_URL=` vide dans .env : CSV de repli seul
         return url or None
 
 
