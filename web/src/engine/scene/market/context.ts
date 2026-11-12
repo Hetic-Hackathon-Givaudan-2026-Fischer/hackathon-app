@@ -1,0 +1,55 @@
+// Contexte de construction partagé par les modules du magasin.
+import * as THREE from 'three';
+import type { BoxCollider, Category, Collider } from '../../types';
+import type { Door } from './doors';
+import type { MarketMaterials } from './materials';
+import type { Plan } from './plan';
+
+export type Vec3 = readonly [number, number, number];
+
+/** Ce que chaque module remplit pendant `createMarket`. */
+export interface BuildContext {
+  plan: Plan;
+  group: THREE.Group;
+  productMeshes: THREE.Mesh[];
+  colliders: Collider[];
+  materials: MarketMaterials;
+  doors: Door[];
+  spotlights: THREE.Object3D[];
+}
+
+/** Meuble en cours de montage (gondole ou frigo) et son stock. */
+export interface BayBuild {
+  bay: THREE.Group;
+  stock: THREE.Object3D[];
+  category: Category;
+  materials: MarketMaterials;
+}
+
+/** Pavé de dimensions `size`, centré en `position`. */
+export function box(
+  material: THREE.Material,
+  size: Vec3,
+  position: Vec3,
+): THREE.Mesh {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material);
+  mesh.position.set(...position);
+  return mesh;
+}
+
+/** Emprise au sol d'un pavé centré en (x, z). */
+export function footprint([x, , z]: Vec3, [w, , d]: Vec3): BoxCollider {
+  return { minX: x - w / 2, maxX: x + w / 2, minZ: z - d / 2, maxZ: z + d / 2 };
+}
+
+/** Pavé posé dans le magasin ; `solid` en fait un obstacle. */
+export function addBlock(
+  ctx: BuildContext,
+  material: THREE.Material,
+  size: Vec3,
+  position: Vec3,
+  solid = false,
+): void {
+  ctx.group.add(box(material, size, position));
+  if (solid) ctx.colliders.push(footprint(position, size));
+}

@@ -4,7 +4,7 @@ Consignes pour les agents IA (Claude Code, Codex…) qui travaillent sur ce dép
 
 ## Le projet
 
-Socle de hackathon : un front Vite + TypeScript (`web/`), une API FastAPI + Python 3.13 (`api/`), PostgreSQL 17 (`db/`) et une IA (Ollama en direct, ou l'API de l'équipe Data/IA), le tout lancé avec Docker Compose.
+Socle de hackathon : un front React + TypeScript + Tailwind sur Vite (`web/`), une API FastAPI + Python 3.13 (`api/`), PostgreSQL 17 (`db/`) et une IA (Ollama en direct, ou l'API de l'équipe Data/IA), le tout lancé avec Docker Compose.
 
 ```
 navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
@@ -51,6 +51,20 @@ Architecture en couches ([ADR 0004](docs/adr/0004-backend-fastapi.md)) :
 - Le schéma de la base est dans `db/init/*.sql` (joué au premier démarrage seulement) ; pas d'Alembic.
 - Dépendances avec `uv add` (dans `api/`) : commite `pyproject.toml` **et** `uv.lock`.
 - Pour les conventions FastAPI (`Annotated`, types de retour, routers…), suis le skill `.agents/skills/fastapi`.
+
+## Le front (`web/src/`)
+
+React + Tailwind pour l'interface, three.js impératif pour la scène ([ADR 0007](docs/adr/0007-front-react.md)) :
+
+| Dossier         | Rôle                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| `components/`   | Composants React, classes Tailwind ; jamais d'import de `three`.          |
+| `hooks/`        | `useExperience` : monte / libère le moteur, expose son état à React.      |
+| `engine/`       | Moteur three.js ; entrée unique `createExperience`, libéré par `dispose`. |
+| `engine/scene/` | Un dossier par élément de la scène, `index.ts` comme seule surface.       |
+
+- Types partagés du moteur : `engine/types.ts` ; outils canvas : `engine/scene/shared/canvas.ts`.
+- Jetons de la charte : `@theme` dans `index.css`, alignés sur `brand.ts`.
 
 ## Tests
 
