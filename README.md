@@ -23,7 +23,7 @@ Puis, au choix :
 
 Puis ouvre http://localhost:5173. Le premier lancement prend quelques minutes (images Docker, dépendances).
 
-Sans `DATA_AI_URL` dans `api/.env`, l'app tourne quand même, avec des données de repli (voir [section 6](#6-données-dataia-et-csv-de-repli)).
+L'API Data/IA (service `data`, image GHCR du dépôt [Matcha-Data](https://github.com/Hetic-Hackathon-Givaudan-2026-Fischer/Matcha-Data)) démarre avec le reste. Sans `DATA_AI_URL` dans `api/.env`, l'app tourne quand même, avec des données de repli (voir [section 6](#6-données-dataia-et-csv-de-repli)).
 
 **Sommaire**
 
@@ -216,7 +216,7 @@ docker compose exec dev bash
 ```
  navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
                                                  │
-                                                 ├──► API de l'équipe Data/IA (ngrok)  si DATA_AI_URL est renseignée
+                                                 ├──► data (API Data/IA, :8000)        si DATA_AI_URL est renseignée (défaut)
                                                  └──► CSV de repli                     si DATA_AI_URL est vide, ou Data/IA coupée
 ```
 
@@ -311,12 +311,18 @@ L'API lit les tendances d'arômes chez l'équipe Data/IA. Quand elle ne répond 
 
 L'explication rédigée par le LLM de Data/IA (`/trends/{id}/insight`) n'est **pas** relayée ([ADR 0014](docs/adr/0014-insight-ia-generative.md)).
 
-### Quand le tunnel ngrok change d'URL
+### Le service `data` (image GHCR)
 
-L'URL change à chaque relance du tunnel par l'équipe Data/IA :
+Par défaut, `DATA_AI_URL=http://data:8000` : l'API Data/IA tourne dans Compose ([ADR 0015](docs/adr/0015-api-data-image-ghcr.md)). Son image est publiée par le dépôt Matcha-Data à chaque push sur `main`, et `docker compose up` tire la dernière (`pull_policy: always`).
 
-1. Mets la nouvelle URL dans `api/.env` (`DATA_AI_URL`).
-2. Depuis ta machine : `docker compose restart api`.
+| Besoin                                   | Commande / réglage                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------- |
+| Swagger de l'API Data/IA                 | http://localhost:8000/docs                                                 |
+| Lancer sans réseau (image déjà en cache) | `docker compose up --pull never`                                           |
+| Utiliser une autre API Data/IA (ngrok…)  | Son URL dans `DATA_AI_URL` (`api/.env`), puis `docker compose restart api` |
+| Explications IA (Ollama)                 | Ollama lancé sur ta machine (port `11434`) ; sinon, le reste marche        |
+
+Si ton `api/.env` date d'avant ce service, mets-y `DATA_AI_URL=http://data:8000` puis `docker compose restart api`.
 
 Si l'équipe Data/IA protège son API, mets sa clé dans `DATA_AI_KEY` (envoyée dans l'en-tête `X-API-Key`). Cette clé se transmet **hors de git**.
 
@@ -325,7 +331,7 @@ Si l'équipe Data/IA protège son API, mets sa clé dans `DATA_AI_KEY` (envoyée
 | Variable                  | Rôle                                                   | Défaut                  |
 | ------------------------- | ------------------------------------------------------ | ----------------------- |
 | `DATABASE_URL`            | Connexion PostgreSQL (`postgres://…` suffit).          | La base de Compose      |
-| `DATA_AI_URL`             | URL de l'API Data/IA ; vide = CSV seul.                | Vide                    |
+| `DATA_AI_URL`             | URL de l'API Data/IA ; vide = CSV seul.                | `http://data:8000`      |
 | `DATA_AI_KEY`             | Clé de l'API Data/IA, si elle en demande une.          | Vide                    |
 | `DATA_AI_TIMEOUT_SECONDS` | Délai au-delà duquel Data/IA est jugée injoignable.    | `5`                     |
 | `PUBLIC_WEB_URL`          | URL du front, utilisée dans les liens showroom.        | `http://localhost:5173` |

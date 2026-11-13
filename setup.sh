@@ -5,7 +5,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-PORTS="3000 5173 5433"
+PORTS="3000 5173 5433 8000"
 
 # --- Affichage ---------------------------------------------------------------
 
@@ -117,6 +117,7 @@ print_summary() {
   printf '  API          http://localhost:3000/api/v1/health\n'
   printf '  Swagger      http://localhost:3000/api/docs\n'
   printf '  PostgreSQL   localhost:5433 (user/mdp : app)\n'
+  printf '  API Data/IA  http://localhost:8000/docs\n'
   printf '\n  Arrêter : docker compose down\n'
 }
 

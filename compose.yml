@@ -9,7 +9,7 @@ x-workspace: &workspace
     - .:/workspace:cached
   extra_hosts:
     # Rend l'hôte joignable sous Linux (Docker Desktop le fait déjà), par exemple
-    # pour une API Data/IA lancée en local (DATA_AI_URL=http://host.docker.internal:…)
+    # pour une API Data/IA lancée hors Compose (DATA_AI_URL=http://host.docker.internal:…)
     - host.docker.internal:host-gateway
 
 # Conteneurs Node (install, web, dev). Image officielle slim : rien à compiler
@@ -96,6 +96,9 @@ services:
         condition: service_completed_successfully
       db:
         condition: service_healthy
+      # DATA_AI_URL=http://data:8000 (api/.env.example) : Data/IA prête avant l'API
+      data:
+        condition: service_healthy
 
   # Le front Vite ; les appels /api sont relayés au service « api »
   web:
@@ -129,6 +132,23 @@ services:
         condition: service_completed_successfully
       db:
         condition: service_healthy
+
+  # L'API Data/IA (FlavorTrends), image publiée sur GHCR par le dépôt Matcha-Data
+  # à chaque push sur main (ADR 0015). Tirée, jamais construite ici : --build ne
+  # la concerne pas. pull_policy always : la dernière version de main à chaque up
+  data:
+    image: ghcr.io/hetic-hackathon-givaudan-2026-fischer/matcha-data:latest
+    pull_policy: always
+    environment:
+      # Explications IA : Ollama de la machine hôte, s'il tourne (sinon, le reste marche)
+      OLLAMA_HOST: http://host.docker.internal:11434
+      HEALTHCHECK_URL: http://localhost:8000/api/v1/health
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    # Remplace celui de l'image (30 s) : même rythme que les autres services
+    healthcheck: *python-healthcheck
+    ports:
+      - 127.0.0.1:8000:8000
 
   db:
     image: postgres:17

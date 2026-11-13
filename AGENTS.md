@@ -9,7 +9,7 @@ Socle de hackathon : un front React + TypeScript + Tailwind sur Vite (`web/`), u
 ```
 navigateur ──► web (Vite, :5173) ──/api──► api (FastAPI, :3000) ──► db (PostgreSQL, :5433)
                                                 │
-                                                ├──► API de l'équipe Data/IA (ngrok)   (DATA_AI_URL renseignée)
+                                                ├──► data (API Data/IA, image GHCR)    (DATA_AI_URL renseignée)
                                                 └──► CSV de repli (api/app/data/)      (DATA_AI_URL vide, ou Data/IA coupée)
 ```
 

@@ -37,10 +37,13 @@ COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /usr/local/bin/
 
 # Python système uniquement : le venv pointe sur /usr/bin/python3.13, présent à
 # l'identique dans l'image de prod
+# UV_COMPILE_BYTECODE : les .pyc des dépendances sont créés au build, pas à
+# chaque nouveau conteneur (environ 5 s de démarrage gagnées)
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv \
     UV_PYTHON_DOWNLOADS=never \
     UV_PYTHON_PREFERENCE=only-system \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1
 
 USER app
 

@@ -18,19 +18,19 @@
 
 Option 3.
 
-| Fichier                                  | Rôle                                                                                             |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [`compose.yml`](../../compose.yml)       | `db` (PostgreSQL 17), `install` (`npm ci`, `api/.env`), `api` (FastAPI), `web` (Vite), `dev`.    |
-| [`api/Dockerfile`](../../api/Dockerfile) | Image de l'API, venv dans `/opt/venv` ; cible `dev` (Compose, `uvicorn --reload`) et `prod`.     |
-| [`setup.sh`](../../setup.sh)             | Vérifie Docker, `DATA_AI_URL`, ports ; démarre la stack jusqu'à ce que tout soit sain.           |
-| [`.devcontainer/`](../../.devcontainer/) | Option VS Code / Zed sur le service `dev` : Node 24, Python 3.13, uv, git, `psql`, ESLint, ruff. |
+| Fichier                                  | Rôle                                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`compose.yml`](../../compose.yml)       | `db` (PostgreSQL 17), `install` (`npm ci`, `api/.env`), `api` (FastAPI), `web` (Vite), `dev`, `data` ([0015](0015-api-data-image-ghcr.md)). |
+| [`api/Dockerfile`](../../api/Dockerfile) | Image de l'API, venv dans `/opt/venv` ; cible `dev` (Compose, `uvicorn --reload`) et `prod`.                                                |
+| [`setup.sh`](../../setup.sh)             | Vérifie Docker, `DATA_AI_URL`, ports ; démarre la stack jusqu'à ce que tout soit sain.                                                      |
+| [`.devcontainer/`](../../.devcontainer/) | Option VS Code / Zed sur le service `dev` : Node 24, Python 3.13, uv, git, `psql`, ESLint, ruff.                                            |
 
 Règles :
 
 - Le projet est monté dans les conteneurs (`.:/workspace`) : pas de redémarrage pour du code.
 - Ports publiés sur `127.0.0.1` uniquement.
 - Jamais de socket Docker dans `dev` (accès root à la machine).
-- Ordre de démarrage par healthchecks : `db` → `api` → `web`.
+- Ordre de démarrage par healthchecks : `db` et `data` → `api` → `web`.
 
 | Après modification de | Lancer (sur la machine)            |
 | --------------------- | ---------------------------------- |
